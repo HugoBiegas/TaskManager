@@ -41,8 +41,8 @@ RUN apk add --no-cache --virtual .build-deps $PHPIZE_DEPS \
 # Installation de Composer
 COPY --from=composer:2 /usr/bin/composer /usr/bin/composer
 
-# Configuration PHP pour la production
-COPY docker/php/php-prod.ini /usr/local/etc/php/conf.d/custom.ini
+# Configuration PHP pour le BUILD (sans preload pour éviter les erreurs)
+COPY docker/php/php-build.ini /usr/local/etc/php/conf.d/custom.ini
 
 # Configuration Nginx
 COPY docker/nginx/nginx-render.conf /etc/nginx/http.d/default.conf
@@ -68,12 +68,13 @@ RUN composer install \
 # Copier le reste de l'application
 COPY . .
 
-# Exécuter les scripts post-install maintenant que tout est copié
-RUN composer run-script post-install-cmd --no-dev || true
-
-# Créer les répertoires nécessaires et définir les permissions
-RUN mkdir -p var/cache var/log public/build \
+# Exécuter les scripts post-install et préparer l'application
+RUN composer run-script post-install-cmd --no-dev || true \
+    && mkdir -p var/cache var/log public/build \
     && chown -R www-data:www-data var public
+
+# Remplacer par la configuration PHP de production (avec preload)
+COPY docker/php/php-prod.ini /usr/local/etc/php/conf.d/custom.ini
 
 # Warmup du cache Symfony (avec gestion d'erreur si pas de BDD)
 RUN APP_ENV=prod APP_DEBUG=0 php bin/console cache:warmup --no-optional-warmers || true
