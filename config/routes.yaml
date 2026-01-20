@@ -5,8 +5,3 @@ controllers:
         path: ../src/Controller/
         namespace: App\Controller
     type: attribute
-
-# Importation des routes pour le kernel
-kernel:
-    resource: .
-    type: kernel
