@@ -1,29 +1,7 @@
 # Dockerfile de Production pour Render.com
-# Multi-stage build optimisé pour Symfony 6.4 LTS
+# Build optimisé pour Symfony 6.4 LTS
 
-# ============================================
-# Stage 1: Composer dependencies
-# ============================================
-FROM composer:2 AS composer
-
-WORKDIR /app
-
-# Copier les fichiers composer (composer.lock peut ne pas exister)
-COPY composer.json ./
-COPY composer.lock* ./
-
-# Installer les dépendances (sans dev)
-RUN composer install \
-    --no-dev \
-    --no-scripts \
-    --no-autoloader \
-    --prefer-dist \
-    --ignore-platform-reqs
-
-# ============================================
-# Stage 2: Build final
-# ============================================
-FROM php:8.3-fpm-alpine AS production
+FROM php:8.3-fpm-alpine
 
 # Arguments de build
 ARG APP_ENV=prod
@@ -39,7 +17,8 @@ RUN apk add --no-cache \
     icu-dev \
     libpq-dev \
     nginx \
-    supervisor
+    supervisor \
+    netcat-openbsd
 
 # Installation des extensions PHP
 RUN docker-php-ext-configure gd --with-freetype --with-jpeg \
@@ -59,6 +38,9 @@ RUN apk add --no-cache --virtual .build-deps $PHPIZE_DEPS \
     && docker-php-ext-enable apcu \
     && apk del .build-deps
 
+# Installation de Composer
+COPY --from=composer:2 /usr/bin/composer /usr/bin/composer
+
 # Configuration PHP pour la production
 COPY docker/php/php-prod.ini /usr/local/etc/php/conf.d/custom.ini
 
@@ -71,22 +53,30 @@ COPY docker/supervisor/supervisord.conf /etc/supervisor/conf.d/supervisord.conf
 # Répertoire de travail
 WORKDIR /var/www/html
 
-# Copier les fichiers de l'application
-COPY --from=composer /app/vendor ./vendor
+# Copier d'abord les fichiers composer pour profiter du cache Docker
+COPY composer.json ./
+COPY composer.lock* ./
+
+# Installer les dépendances (sans scripts pour éviter les erreurs)
+ENV COMPOSER_ALLOW_SUPERUSER=1
+RUN composer install \
+    --no-dev \
+    --no-scripts \
+    --prefer-dist \
+    --optimize-autoloader
+
+# Copier le reste de l'application
 COPY . .
 
-# Copier composer depuis le stage composer pour finaliser l'autoload
-COPY --from=composer:2 /usr/bin/composer /usr/bin/composer
-
-# Finaliser l'installation Composer (autoload optimisé)
-RUN composer dump-autoload --optimize --classmap-authoritative --no-dev
+# Exécuter les scripts post-install maintenant que tout est copié
+RUN composer run-script post-install-cmd --no-dev || true
 
 # Créer les répertoires nécessaires et définir les permissions
 RUN mkdir -p var/cache var/log public/build \
     && chown -R www-data:www-data var public
 
-# Warmup du cache Symfony
-RUN php bin/console cache:warmup --env=prod
+# Warmup du cache Symfony (avec gestion d'erreur si pas de BDD)
+RUN APP_ENV=prod APP_DEBUG=0 php bin/console cache:warmup --no-optional-warmers || true
 
 # Port exposé (Render utilise la variable PORT)
 ENV PORT=10000
