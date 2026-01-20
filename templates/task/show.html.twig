@@ -1,0 +1,131 @@
+{% extends 'base.html.twig' %}
+
+{% block title %}{{ task.title }} - TaskManager{% endblock %}
+
+{% block body %}
+<div class="mb-4">
+    <a href="{{ path('app_task_index') }}" class="text-decoration-none">
+        <i class="bi bi-arrow-left me-1"></i>
+        Retour aux tâches
+    </a>
+</div>
+
+<div class="row">
+    <div class="col-lg-8">
+        <div class="card {{ task.isOverdue ? 'overdue' : '' }}">
+            <div class="card-body">
+                <div class="d-flex justify-content-between align-items-start mb-3">
+                    <div>
+                        <span class="badge bg-{{ task.status.color }} me-2">
+                            {{ task.status.label }}
+                        </span>
+                        <span class="badge bg-{{ task.priority.color }}">
+                            {{ task.priority.label }}
+                        </span>
+                    </div>
+                    <div class="dropdown">
+                        <button class="btn btn-outline-secondary btn-sm" type="button" data-bs-toggle="dropdown">
+                            <i class="bi bi-three-dots"></i>
+                        </button>
+                        <ul class="dropdown-menu dropdown-menu-end">
+                            <li>
+                                <a class="dropdown-item" href="{{ path('app_task_edit', {id: task.id}) }}">
+                                    <i class="bi bi-pencil me-2"></i>Modifier
+                                </a>
+                            </li>
+                            <li><hr class="dropdown-divider"></li>
+                            <li>
+                                <form method="post"
+                                      action="{{ path('app_task_delete', {id: task.id}) }}"
+                                      onsubmit="return confirm('Êtes-vous sûr de vouloir supprimer cette tâche ?');">
+                                    <input type="hidden" name="_token" value="{{ csrf_token('delete' ~ task.id) }}">
+                                    <button class="dropdown-item text-danger" type="submit">
+                                        <i class="bi bi-trash me-2"></i>Supprimer
+                                    </button>
+                                </form>
+                            </li>
+                        </ul>
+                    </div>
+                </div>
+
+                <h2 class="h3 mb-3">{{ task.title }}</h2>
+
+                {% if task.description %}
+                    <div class="mb-4">
+                        <h6 class="text-muted">Description</h6>
+                        <p class="mb-0">{{ task.description|nl2br }}</p>
+                    </div>
+                {% endif %}
+
+                {# Actions rapides de changement de statut #}
+                <div class="d-flex gap-2 flex-wrap">
+                    {% for status in ['todo', 'in_progress', 'done'] %}
+                        {% set statusEnum = constant('App\\Entity\\TaskStatus::' ~ status|upper) %}
+                        {% if task.status != statusEnum %}
+                            <form method="post" action="{{ path('app_task_change_status', {id: task.id, status: status}) }}" class="d-inline">
+                                <input type="hidden" name="_token" value="{{ csrf_token('status' ~ task.id) }}">
+                                <button type="submit" class="btn btn-outline-{{ statusEnum.color }} btn-sm">
+                                    Marquer "{{ statusEnum.label }}"
+                                </button>
+                            </form>
+                        {% endif %}
+                    {% endfor %}
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <div class="col-lg-4 mt-4 mt-lg-0">
+        <div class="card">
+            <div class="card-header">
+                <h6 class="mb-0">Détails</h6>
+            </div>
+            <div class="card-body">
+                <dl class="mb-0">
+                    {% if task.category %}
+                        <dt class="text-muted small">Catégorie</dt>
+                        <dd class="mb-3">
+                            <span class="badge" style="background-color: {{ task.category.color }}">
+                                {{ task.category.name }}
+                            </span>
+                        </dd>
+                    {% endif %}
+
+                    {% if task.dueDate %}
+                        <dt class="text-muted small">Date d'échéance</dt>
+                        <dd class="mb-3 {{ task.isOverdue ? 'text-danger' : '' }}">
+                            <i class="bi bi-calendar me-1"></i>
+                            {{ task.dueDate|date('d F Y') }}
+                            {% if task.isOverdue %}
+                                <span class="badge bg-danger ms-1">En retard</span>
+                            {% elseif task.isDueToday %}
+                                <span class="badge bg-warning ms-1">Aujourd'hui</span>
+                            {% endif %}
+                        </dd>
+                    {% endif %}
+
+                    <dt class="text-muted small">Créée le</dt>
+                    <dd class="mb-3">
+                        {{ task.createdAt|date('d/m/Y à H:i') }}
+                    </dd>
+
+                    {% if task.updatedAt %}
+                        <dt class="text-muted small">Modifiée le</dt>
+                        <dd class="mb-3">
+                            {{ task.updatedAt|date('d/m/Y à H:i') }}
+                        </dd>
+                    {% endif %}
+
+                    {% if task.completedAt %}
+                        <dt class="text-muted small">Terminée le</dt>
+                        <dd class="mb-0 text-success">
+                            <i class="bi bi-check-circle me-1"></i>
+                            {{ task.completedAt|date('d/m/Y à H:i') }}
+                        </dd>
+                    {% endif %}
+                </dl>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}

@@ -1,0 +1,70 @@
+{% extends 'base.html.twig' %}
+
+{% block title %}Catégories - TaskManager{% endblock %}
+
+{% block body %}
+<div class="d-flex justify-content-between align-items-center mb-4">
+    <h1 class="h3 mb-0">
+        <i class="bi bi-tags text-primary me-2"></i>
+        Catégories
+    </h1>
+    <a href="{{ path('app_category_new') }}" class="btn btn-primary">
+        <i class="bi bi-plus-lg me-1"></i>
+        Nouvelle catégorie
+    </a>
+</div>
+
+{% if categories|length > 0 %}
+    <div class="row g-3">
+        {% for item in categories %}
+            {% set category = item[0] is defined ? item[0] : item.category|default(item) %}
+            {% set taskCount = item.taskCount|default(0) %}
+            <div class="col-md-6 col-lg-4">
+                <div class="card h-100">
+                    <div class="card-body">
+                        <div class="d-flex align-items-center mb-3">
+                            <span class="rounded-circle me-3"
+                                  style="width: 40px; height: 40px; background-color: {{ category.color }}; display: inline-block;">
+                            </span>
+                            <div>
+                                <h5 class="mb-0">{{ category.name }}</h5>
+                                <small class="text-muted">{{ taskCount }} tâche(s)</small>
+                            </div>
+                        </div>
+
+                        {% if category.description %}
+                            <p class="text-muted small mb-3">{{ category.description }}</p>
+                        {% endif %}
+
+                        <div class="d-flex gap-2">
+                            <a href="{{ path('app_category_show', {id: category.id}) }}"
+                               class="btn btn-outline-primary btn-sm">
+                                <i class="bi bi-eye me-1"></i>
+                                Voir les tâches
+                            </a>
+                            <a href="{{ path('app_category_edit', {id: category.id}) }}"
+                               class="btn btn-outline-secondary btn-sm">
+                                <i class="bi bi-pencil"></i>
+                            </a>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        {% endfor %}
+    </div>
+{% else %}
+    <div class="card">
+        <div class="card-body text-center py-5">
+            <i class="bi bi-tags text-muted" style="font-size: 4rem;"></i>
+            <h4 class="mt-3">Aucune catégorie</h4>
+            <p class="text-muted">
+                Créez des catégories pour organiser vos tâches.
+            </p>
+            <a href="{{ path('app_category_new') }}" class="btn btn-primary">
+                <i class="bi bi-plus-lg me-1"></i>
+                Créer une catégorie
+            </a>
+        </div>
+    </div>
+{% endif %}
+{% endblock %}

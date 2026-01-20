@@ -1,0 +1,200 @@
+{% extends 'base.html.twig' %}
+
+{% block title %}Mes Tâches - TaskManager{% endblock %}
+
+{% block body %}
+<div class="d-flex justify-content-between align-items-center mb-4">
+    <h1 class="h3 mb-0">
+        <i class="bi bi-list-task text-primary me-2"></i>
+        Mes Tâches
+    </h1>
+    <a href="{{ path('app_task_new') }}" class="btn btn-primary">
+        <i class="bi bi-plus-lg me-1"></i>
+        Nouvelle tâche
+    </a>
+</div>
+
+{# Statistiques #}
+<div class="row g-3 mb-4">
+    <div class="col-sm-6 col-lg-3">
+        <div class="stats-card todo">
+            <div class="d-flex justify-content-between align-items-center">
+                <div>
+                    <div class="h4 mb-0">{{ stats.todo ?? 0 }}</div>
+                    <small>À faire</small>
+                </div>
+                <i class="bi bi-clipboard2 fs-2 opacity-50"></i>
+            </div>
+        </div>
+    </div>
+    <div class="col-sm-6 col-lg-3">
+        <div class="stats-card progress">
+            <div class="d-flex justify-content-between align-items-center">
+                <div>
+                    <div class="h4 mb-0">{{ stats.in_progress ?? 0 }}</div>
+                    <small>En cours</small>
+                </div>
+                <i class="bi bi-hourglass-split fs-2 opacity-50"></i>
+            </div>
+        </div>
+    </div>
+    <div class="col-sm-6 col-lg-3">
+        <div class="stats-card done">
+            <div class="d-flex justify-content-between align-items-center">
+                <div>
+                    <div class="h4 mb-0">{{ stats.done ?? 0 }}</div>
+                    <small>Terminées</small>
+                </div>
+                <i class="bi bi-check-circle fs-2 opacity-50"></i>
+            </div>
+        </div>
+    </div>
+    <div class="col-sm-6 col-lg-3">
+        <div class="stats-card overdue">
+            <div class="d-flex justify-content-between align-items-center">
+                <div>
+                    <div class="h4 mb-0">{{ overdueTasks|length }}</div>
+                    <small>En retard</small>
+                </div>
+                <i class="bi bi-exclamation-triangle fs-2 opacity-50"></i>
+            </div>
+        </div>
+    </div>
+</div>
+
+{# Filtres par statut #}
+<div class="card mb-4">
+    <div class="card-body py-2">
+        <div class="d-flex gap-2 flex-wrap">
+            <a href="{{ path('app_task_index') }}"
+               class="btn btn-sm {{ currentStatus is null ? 'btn-primary' : 'btn-outline-secondary' }}">
+                Toutes
+            </a>
+            <a href="{{ path('app_task_index', {status: 'todo'}) }}"
+               class="btn btn-sm {{ currentStatus == 'todo' ? 'btn-primary' : 'btn-outline-secondary' }}">
+                À faire
+            </a>
+            <a href="{{ path('app_task_index', {status: 'in_progress'}) }}"
+               class="btn btn-sm {{ currentStatus == 'in_progress' ? 'btn-primary' : 'btn-outline-secondary' }}">
+                En cours
+            </a>
+            <a href="{{ path('app_task_index', {status: 'done'}) }}"
+               class="btn btn-sm {{ currentStatus == 'done' ? 'btn-primary' : 'btn-outline-secondary' }}">
+                Terminées
+            </a>
+        </div>
+    </div>
+</div>
+
+{# Alertes tâches urgentes #}
+{% if todayTasks|length > 0 %}
+    <div class="alert alert-warning d-flex align-items-center mb-4">
+        <i class="bi bi-bell me-2"></i>
+        <span>
+            <strong>{{ todayTasks|length }} tâche(s)</strong> à faire aujourd'hui
+        </span>
+    </div>
+{% endif %}
+
+{# Liste des tâches #}
+{% if tasks|length > 0 %}
+    <div class="row g-3">
+        {% for task in tasks %}
+            <div class="col-md-6 col-lg-4">
+                <div class="card task-card h-100 {{ task.isOverdue ? 'overdue' : (task.isDueToday ? 'due-today' : '') }}">
+                    <div class="card-body">
+                        <div class="d-flex justify-content-between align-items-start mb-2">
+                            <span class="badge bg-{{ task.status.color }}">
+                                {{ task.status.label }}
+                            </span>
+                            <span class="badge priority-badge bg-{{ task.priority.color }}">
+                                {{ task.priority.label }}
+                            </span>
+                        </div>
+
+                        <h5 class="card-title mb-2">
+                            <a href="{{ path('app_task_show', {id: task.id}) }}" class="text-decoration-none text-dark">
+                                {{ task.title }}
+                            </a>
+                        </h5>
+
+                        {% if task.description %}
+                            <p class="card-text text-muted small mb-2">
+                                {{ task.description|length > 100 ? task.description|slice(0, 100) ~ '...' : task.description }}
+                            </p>
+                        {% endif %}
+
+                        <div class="d-flex justify-content-between align-items-center mt-3">
+                            <div class="small text-muted">
+                                {% if task.category %}
+                                    <span class="me-2">
+                                        <i class="bi bi-tag" style="color: {{ task.category.color }}"></i>
+                                        {{ task.category.name }}
+                                    </span>
+                                {% endif %}
+
+                                {% if task.dueDate %}
+                                    <span class="{{ task.isOverdue ? 'text-danger' : '' }}">
+                                        <i class="bi bi-calendar"></i>
+                                        {{ task.dueDate|date('d/m/Y') }}
+                                    </span>
+                                {% endif %}
+                            </div>
+
+                            <div class="dropdown">
+                                <button class="btn btn-sm btn-outline-secondary"
+                                        type="button"
+                                        data-bs-toggle="dropdown">
+                                    <i class="bi bi-three-dots"></i>
+                                </button>
+                                <ul class="dropdown-menu dropdown-menu-end">
+                                    <li>
+                                        <a class="dropdown-item" href="{{ path('app_task_edit', {id: task.id}) }}">
+                                            <i class="bi bi-pencil me-2"></i>Modifier
+                                        </a>
+                                    </li>
+                                    {% if task.status.value != 'done' %}
+                                        <li>
+                                            <form method="post" action="{{ path('app_task_change_status', {id: task.id, status: 'done'}) }}">
+                                                <input type="hidden" name="_token" value="{{ csrf_token('status' ~ task.id) }}">
+                                                <button class="dropdown-item text-success" type="submit">
+                                                    <i class="bi bi-check-lg me-2"></i>Marquer terminée
+                                                </button>
+                                            </form>
+                                        </li>
+                                    {% endif %}
+                                    <li><hr class="dropdown-divider"></li>
+                                    <li>
+                                        <form method="post"
+                                              action="{{ path('app_task_delete', {id: task.id}) }}"
+                                              onsubmit="return confirm('Êtes-vous sûr de vouloir supprimer cette tâche ?');">
+                                            <input type="hidden" name="_token" value="{{ csrf_token('delete' ~ task.id) }}">
+                                            <button class="dropdown-item text-danger" type="submit">
+                                                <i class="bi bi-trash me-2"></i>Supprimer
+                                            </button>
+                                        </form>
+                                    </li>
+                                </ul>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        {% endfor %}
+    </div>
+{% else %}
+    <div class="card">
+        <div class="card-body text-center py-5">
+            <i class="bi bi-inbox text-muted" style="font-size: 4rem;"></i>
+            <h4 class="mt-3">Aucune tâche</h4>
+            <p class="text-muted">
+                {{ currentStatus ? 'Aucune tâche avec ce statut.' : 'Commencez par créer votre première tâche !' }}
+            </p>
+            <a href="{{ path('app_task_new') }}" class="btn btn-primary">
+                <i class="bi bi-plus-lg me-1"></i>
+                Créer une tâche
+            </a>
+        </div>
+    </div>
+{% endif %}
+{% endblock %}

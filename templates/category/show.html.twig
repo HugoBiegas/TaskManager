@@ -1,0 +1,71 @@
+{% extends 'base.html.twig' %}
+
+{% block title %}{{ category.name }} - TaskManager{% endblock %}
+
+{% block body %}
+<div class="mb-4">
+    <a href="{{ path('app_category_index') }}" class="text-decoration-none">
+        <i class="bi bi-arrow-left me-1"></i>
+        Retour aux catégories
+    </a>
+</div>
+
+<div class="d-flex justify-content-between align-items-center mb-4">
+    <div class="d-flex align-items-center">
+        <span class="rounded-circle me-3"
+              style="width: 50px; height: 50px; background-color: {{ category.color }}; display: inline-block;">
+        </span>
+        <div>
+            <h1 class="h3 mb-0">{{ category.name }}</h1>
+            {% if category.description %}
+                <p class="text-muted mb-0">{{ category.description }}</p>
+            {% endif %}
+        </div>
+    </div>
+    <a href="{{ path('app_category_edit', {id: category.id}) }}" class="btn btn-outline-secondary">
+        <i class="bi bi-pencil me-1"></i>
+        Modifier
+    </a>
+</div>
+
+<h5 class="mb-3">Tâches dans cette catégorie ({{ tasks|length }})</h5>
+
+{% if tasks|length > 0 %}
+    <div class="list-group">
+        {% for task in tasks %}
+            <a href="{{ path('app_task_show', {id: task.id}) }}"
+               class="list-group-item list-group-item-action">
+                <div class="d-flex justify-content-between align-items-center">
+                    <div>
+                        <h6 class="mb-1">{{ task.title }}</h6>
+                        {% if task.dueDate %}
+                            <small class="text-muted {{ task.isOverdue ? 'text-danger' : '' }}">
+                                <i class="bi bi-calendar me-1"></i>
+                                {{ task.dueDate|date('d/m/Y') }}
+                            </small>
+                        {% endif %}
+                    </div>
+                    <div>
+                        <span class="badge bg-{{ task.priority.color }} me-1">
+                            {{ task.priority.label }}
+                        </span>
+                        <span class="badge bg-{{ task.status.color }}">
+                            {{ task.status.label }}
+                        </span>
+                    </div>
+                </div>
+            </a>
+        {% endfor %}
+    </div>
+{% else %}
+    <div class="card">
+        <div class="card-body text-center py-4">
+            <p class="text-muted mb-3">Aucune tâche dans cette catégorie</p>
+            <a href="{{ path('app_task_new') }}" class="btn btn-primary btn-sm">
+                <i class="bi bi-plus-lg me-1"></i>
+                Créer une tâche
+            </a>
+        </div>
+    </div>
+{% endif %}
+{% endblock %}

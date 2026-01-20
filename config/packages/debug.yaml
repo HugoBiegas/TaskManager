@@ -1,0 +1,11 @@
+# config/packages/debug.yaml
+when@dev:
+    debug:
+        dump_destination: "tcp://%env(VAR_DUMPER_SERVER)%"
+
+    # Si VAR_DUMPER_SERVER n'est pas défini, utiliser la sortie standard
+    # Lancer avec: symfony server:dump
+
+when@test:
+    debug:
+        dump_destination: null

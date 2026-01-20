@@ -1,0 +1,57 @@
+# render.yaml - Configuration pour Render.com
+# Déploiement automatique d'une application Symfony
+
+services:
+  # Service Web principal
+  - type: web
+    name: taskmanager
+    runtime: docker
+    dockerfilePath: ./Dockerfile
+    dockerContext: .
+
+    # Région (optionnel, Frankfurt par défaut pour l'Europe)
+    region: frankfurt
+
+    # Plan (free pour commencer)
+    plan: free
+
+    # Variables d'environnement
+    envVars:
+      - key: APP_ENV
+        value: prod
+      - key: APP_DEBUG
+        value: "0"
+      - key: APP_SECRET
+        generateValue: true
+      - key: DATABASE_URL
+        fromDatabase:
+          name: taskmanager-db
+          property: connectionString
+      # Pour utiliser Neon.tech à la place de la BDD Render:
+      # - key: DATABASE_URL
+      #   sync: false  # Défini manuellement dans le dashboard Render
+
+    # Commandes de build
+    buildCommand: |
+      composer install --no-dev --optimize-autoloader
+      php bin/console cache:clear --env=prod
+      php bin/console asset-map:compile
+
+    # Commande de démarrage
+    startCommand: php-fpm
+
+    # Health check
+    healthCheckPath: /login
+
+    # Auto-deploy depuis GitHub
+    autoDeploy: true
+
+  # Base de données PostgreSQL (optionnel si vous utilisez Neon.tech)
+  # Décommentez si vous voulez utiliser une BDD Render
+  # - type: pserv
+  #   name: taskmanager-db
+  #   runtime: postgres
+  #   plan: free
+  #   databases:
+  #     - name: taskmanager
+  #       user: taskmanager

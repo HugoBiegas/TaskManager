@@ -1,0 +1,9 @@
+# config/packages/doctrine_migrations.yaml
+# Configuration des migrations Doctrine
+doctrine_migrations:
+    migrations_paths:
+        'DoctrineMigrations': '%kernel.project_dir%/migrations'
+    enable_profiler: false
+    check_database_platform: true
+    all_or_nothing: true
+    transactional: true

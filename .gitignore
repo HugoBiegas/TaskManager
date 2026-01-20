@@ -1,0 +1,46 @@
+# Symfony
+/.env.local
+/.env.local.php
+/.env.*.local
+/config/secrets/prod/prod.decrypt.private.php
+/public/bundles/
+/var/
+/vendor/
+
+# PHPUnit
+.phpunit.result.cache
+.phpunit.cache/
+/phpunit.xml
+
+# Composer
+composer.phar
+
+# IDE
+/.idea/
+/.vscode/
+*.swp
+*.swo
+*~
+
+# OS
+.DS_Store
+Thumbs.db
+
+# Docker
+docker-compose.override.yml
+
+# Build artifacts
+/public/build/
+
+# Logs
+*.log
+npm-debug.log*
+
+# Testing
+/coverage/
+
+# Node (si utilisation de Webpack Encore)
+/node_modules/
+
+# Ignore le document Word (documentation)
+*.docx

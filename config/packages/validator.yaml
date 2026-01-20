@@ -1,0 +1,13 @@
+# config/packages/validator.yaml
+# Configuration de la validation
+framework:
+    validation:
+        email_validation_mode: html5
+        # Activer la validation via les attributs PHP 8
+        enable_attributes: true
+
+# Configuration stricte pour les tests
+when@test:
+    framework:
+        validation:
+            not_compromised_password: false

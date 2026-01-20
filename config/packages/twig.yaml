@@ -1,0 +1,24 @@
+# config/packages/twig.yaml
+# Configuration Twig
+twig:
+    file_name_pattern: '*.twig'
+    default_path: '%kernel.project_dir%/templates'
+
+    # Variables globales disponibles dans tous les templates
+    globals:
+        app_name: 'TaskManager'
+
+    # Formulaires avec Bootstrap 5
+    form_themes:
+        - 'bootstrap_5_layout.html.twig'
+
+# Configuration pour le développement
+when@dev:
+    twig:
+        debug: true
+        strict_variables: true
+
+# Configuration pour les tests
+when@test:
+    twig:
+        strict_variables: true

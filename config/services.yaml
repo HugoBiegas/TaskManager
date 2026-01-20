@@ -1,0 +1,23 @@
+# config/services.yaml
+# Configuration des services avec autowiring et autoconfigure
+parameters:
+
+services:
+    # Configuration par défaut pour les services dans ce fichier
+    _defaults:
+        autowire: true      # Injection automatique des dépendances par type-hint
+        autoconfigure: true # Application automatique des tags selon les interfaces
+        public: false       # Services privés par défaut (best practice)
+
+    # Chargement automatique des services depuis src/
+    App\:
+        resource: '../src/'
+        exclude:
+            - '../src/DependencyInjection/'
+            - '../src/Entity/'
+            - '../src/Kernel.php'
+
+    # Controllers chargés comme services
+    App\Controller\:
+        resource: '../src/Controller/'
+        tags: ['controller.service_arguments']

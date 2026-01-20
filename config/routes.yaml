@@ -1,0 +1,12 @@
+# config/routes.yaml
+# Routes chargées via les attributs PHP dans les controllers
+controllers:
+    resource:
+        path: ../src/Controller/
+        namespace: App\Controller
+    type: attribute
+
+# Importation des routes pour le kernel
+kernel:
+    resource: .
+    type: kernel

@@ -1,0 +1,24 @@
+# config/packages/cache.yaml
+# Configuration du cache Symfony
+framework:
+    cache:
+        # Adaptateur de cache selon l'environnement
+        app: cache.adapter.filesystem
+        system: cache.adapter.system
+
+        # Pools de cache personnalisés
+        pools:
+            doctrine.result_cache_pool:
+                adapter: cache.app
+            doctrine.system_cache_pool:
+                adapter: cache.system
+            app.cache.tasks:
+                adapter: cache.app
+                default_lifetime: 3600
+                tags: true
+
+# Configuration pour la production
+when@prod:
+    framework:
+        cache:
+            app: cache.adapter.apcu

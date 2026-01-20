@@ -1,0 +1,35 @@
+# config/packages/framework.yaml
+# Configuration du FrameworkBundle
+framework:
+    secret: '%env(APP_SECRET)%'
+
+    # Configuration HTTP
+    http_method_override: false
+    handle_all_throwables: true
+
+    # Configuration de la session
+    session:
+        handler_id: null
+        cookie_secure: auto
+        cookie_samesite: lax
+        storage_factory_id: session.storage.factory.native
+
+    # Validation via les attributs PHP 8
+    validation:
+        email_validation_mode: html5
+
+    # Configuration PHP 8 attributes
+    php_errors:
+        log: true
+
+    # Asset Mapper (alternative moderne à Webpack Encore)
+    asset_mapper:
+        paths:
+            - assets/
+
+# Configuration spécifique au test
+when@test:
+    framework:
+        test: true
+        session:
+            storage_factory_id: session.storage.factory.mock_file
