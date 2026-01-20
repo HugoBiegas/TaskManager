@@ -8,8 +8,9 @@ FROM composer:2 AS composer
 
 WORKDIR /app
 
-# Copier uniquement les fichiers composer pour le cache
-COPY composer.json composer.lock ./
+# Copier les fichiers composer (composer.lock peut ne pas exister)
+COPY composer.json ./
+COPY composer.lock* ./
 
 # Installer les dépendances (sans dev)
 RUN composer install \
