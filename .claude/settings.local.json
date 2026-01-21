@@ -5,7 +5,11 @@
       "Bash(php:*)",
       "Bash(powershell -Command \"php -v\")",
       "Bash(powershell -Command \"New-Item -ItemType Directory -Force -Path ''c:\\\\github\\\\TaskManager\\\\docker\\\\php'', ''c:\\\\github\\\\TaskManager\\\\docker\\\\nginx''\")",
-      "Bash(powershell -Command:*)"
+      "Bash(powershell -Command:*)",
+      "Bash(dir:*)",
+      "Bash(composer require:*)",
+      "Bash(curl:*)",
+      "Bash(findstr:*)"
     ]
   }
 }

@@ -4,9 +4,9 @@ namespace App\DataFixtures;
 
 use App\Entity\Category;
 use App\Entity\Task;
-use App\Entity\TaskPriority;
-use App\Entity\TaskStatus;
 use App\Entity\User;
+use App\Enum\TaskPriority;
+use App\Enum\TaskStatus;
 use Doctrine\Bundle\FixturesBundle\Fixture;
 use Doctrine\Persistence\ObjectManager;
 use Symfony\Component\PasswordHasher\Hasher\UserPasswordHasherInterface;
@@ -14,162 +14,102 @@ use Symfony\Component\PasswordHasher\Hasher\UserPasswordHasherInterface;
 class AppFixtures extends Fixture
 {
     public function __construct(
-        private readonly UserPasswordHasherInterface $passwordHasher
+        private readonly UserPasswordHasherInterface $passwordHasher,
     ) {
     }
 
     public function load(ObjectManager $manager): void
     {
-        // Créer les catégories
-        $categories = $this->createCategories($manager);
+        // Create test user
+        $testUser = new User();
+        $testUser->setEmail('test@example.com');
+        $testUser->setFirstName('Test');
+        $testUser->setLastName('User');
+        $testUser->setPassword($this->passwordHasher->hashPassword($testUser, 'password123'));
+        $manager->persist($testUser);
 
-        // Créer un utilisateur de démo
-        $user = $this->createDemoUser($manager);
+        // Create admin user
+        $adminUser = new User();
+        $adminUser->setEmail('admin@example.com');
+        $adminUser->setFirstName('Admin');
+        $adminUser->setLastName('User');
+        $adminUser->setRoles(['ROLE_ADMIN']);
+        $adminUser->setPassword($this->passwordHasher->hashPassword($adminUser, 'admin123'));
+        $manager->persist($adminUser);
 
-        // Créer un admin
-        $admin = $this->createAdminUser($manager);
+        // Create categories for test user
+        $workCategory = new Category();
+        $workCategory->setName('Travail');
+        $workCategory->setColor('#3B82F6');
+        $workCategory->setDescription('Tâches professionnelles');
+        $workCategory->setOwner($testUser);
+        $manager->persist($workCategory);
 
-        // Créer des tâches de démo
-        $this->createDemoTasks($manager, $user, $categories);
+        $personalCategory = new Category();
+        $personalCategory->setName('Personnel');
+        $personalCategory->setColor('#10B981');
+        $personalCategory->setDescription('Tâches personnelles');
+        $personalCategory->setOwner($testUser);
+        $manager->persist($personalCategory);
+
+        $urgentCategory = new Category();
+        $urgentCategory->setName('Urgent');
+        $urgentCategory->setColor('#EF4444');
+        $urgentCategory->setDescription('Tâches urgentes');
+        $urgentCategory->setOwner($testUser);
+        $manager->persist($urgentCategory);
+
+        // Create tasks for test user
+        $task1 = new Task();
+        $task1->setTitle('Terminer le rapport mensuel');
+        $task1->setDescription('Compléter le rapport de ventes du mois de janvier');
+        $task1->setStatus(TaskStatus::IN_PROGRESS);
+        $task1->setPriority(TaskPriority::HIGH);
+        $task1->setDueDate(new \DateTimeImmutable('+2 days'));
+        $task1->setCategory($workCategory);
+        $task1->setOwner($testUser);
+        $manager->persist($task1);
+
+        $task2 = new Task();
+        $task2->setTitle('Réunion équipe');
+        $task2->setDescription('Préparer la présentation pour la réunion hebdomadaire');
+        $task2->setStatus(TaskStatus::TODO);
+        $task2->setPriority(TaskPriority::MEDIUM);
+        $task2->setDueDate(new \DateTimeImmutable('+1 week'));
+        $task2->setCategory($workCategory);
+        $task2->setOwner($testUser);
+        $manager->persist($task2);
+
+        $task3 = new Task();
+        $task3->setTitle('Faire les courses');
+        $task3->setDescription('Liste: lait, pain, fruits, légumes');
+        $task3->setStatus(TaskStatus::TODO);
+        $task3->setPriority(TaskPriority::LOW);
+        $task3->setDueDate(new \DateTimeImmutable('+3 days'));
+        $task3->setCategory($personalCategory);
+        $task3->setOwner($testUser);
+        $manager->persist($task3);
+
+        $task4 = new Task();
+        $task4->setTitle('Appeler le médecin');
+        $task4->setDescription('Prendre rendez-vous pour le bilan annuel');
+        $task4->setStatus(TaskStatus::TODO);
+        $task4->setPriority(TaskPriority::URGENT);
+        $task4->setDueDate(new \DateTimeImmutable('today'));
+        $task4->setCategory($urgentCategory);
+        $task4->setOwner($testUser);
+        $manager->persist($task4);
+
+        $task5 = new Task();
+        $task5->setTitle('Réviser le code du projet');
+        $task5->setDescription('Faire une revue de code du nouveau module');
+        $task5->setStatus(TaskStatus::DONE);
+        $task5->setPriority(TaskPriority::MEDIUM);
+        $task5->setDueDate(new \DateTimeImmutable('-1 day'));
+        $task5->setCategory($workCategory);
+        $task5->setOwner($testUser);
+        $manager->persist($task5);
 
         $manager->flush();
-    }
-
-    private function createCategories(ObjectManager $manager): array
-    {
-        $categoriesData = [
-            ['name' => 'Travail', 'color' => '#3b82f6', 'description' => 'Tâches professionnelles'],
-            ['name' => 'Personnel', 'color' => '#10b981', 'description' => 'Tâches personnelles'],
-            ['name' => 'Urgent', 'color' => '#ef4444', 'description' => 'Tâches urgentes à traiter rapidement'],
-            ['name' => 'Shopping', 'color' => '#f59e0b', 'description' => 'Liste de courses et achats'],
-            ['name' => 'Santé', 'color' => '#ec4899', 'description' => 'Rendez-vous médicaux et sport'],
-        ];
-
-        $categories = [];
-        foreach ($categoriesData as $data) {
-            $category = new Category();
-            $category->setName($data['name']);
-            $category->setColor($data['color']);
-            $category->setDescription($data['description']);
-            $manager->persist($category);
-            $categories[$data['name']] = $category;
-        }
-
-        return $categories;
-    }
-
-    private function createDemoUser(ObjectManager $manager): User
-    {
-        $user = new User();
-        $user->setEmail('demo@taskmanager.com');
-        $user->setFirstName('Jean');
-        $user->setLastName('Dupont');
-        $user->setIsVerified(true);
-        $user->setPassword($this->passwordHasher->hashPassword($user, 'demo1234'));
-
-        $manager->persist($user);
-
-        return $user;
-    }
-
-    private function createAdminUser(ObjectManager $manager): User
-    {
-        $admin = new User();
-        $admin->setEmail('admin@taskmanager.com');
-        $admin->setFirstName('Admin');
-        $admin->setLastName('Système');
-        $admin->setIsVerified(true);
-        $admin->setRoles(['ROLE_ADMIN']);
-        $admin->setPassword($this->passwordHasher->hashPassword($admin, 'admin1234'));
-
-        $manager->persist($admin);
-
-        return $admin;
-    }
-
-    private function createDemoTasks(ObjectManager $manager, User $user, array $categories): void
-    {
-        $tasksData = [
-            [
-                'title' => 'Finaliser le rapport mensuel',
-                'description' => 'Compléter le rapport de janvier avec les statistiques de ventes.',
-                'status' => TaskStatus::IN_PROGRESS,
-                'priority' => TaskPriority::HIGH,
-                'category' => 'Travail',
-                'dueDate' => new \DateTime('+2 days'),
-            ],
-            [
-                'title' => 'Réunion d\'équipe',
-                'description' => 'Préparer la présentation pour la réunion hebdomadaire.',
-                'status' => TaskStatus::TODO,
-                'priority' => TaskPriority::MEDIUM,
-                'category' => 'Travail',
-                'dueDate' => new \DateTime('+1 day'),
-            ],
-            [
-                'title' => 'Appeler le médecin',
-                'description' => 'Prendre rendez-vous pour le check-up annuel.',
-                'status' => TaskStatus::TODO,
-                'priority' => TaskPriority::LOW,
-                'category' => 'Santé',
-                'dueDate' => new \DateTime('+7 days'),
-            ],
-            [
-                'title' => 'Acheter des fournitures',
-                'description' => 'Stylos, papier, classeurs pour le bureau.',
-                'status' => TaskStatus::TODO,
-                'priority' => TaskPriority::LOW,
-                'category' => 'Shopping',
-                'dueDate' => null,
-            ],
-            [
-                'title' => 'Corriger le bug critique',
-                'description' => 'Le formulaire de connexion ne fonctionne pas sur mobile.',
-                'status' => TaskStatus::TODO,
-                'priority' => TaskPriority::URGENT,
-                'category' => 'Urgent',
-                'dueDate' => new \DateTime('today'),
-            ],
-            [
-                'title' => 'Formation Symfony',
-                'description' => 'Suivre le module 3 de la formation en ligne.',
-                'status' => TaskStatus::DONE,
-                'priority' => TaskPriority::MEDIUM,
-                'category' => 'Personnel',
-                'dueDate' => new \DateTime('-2 days'),
-            ],
-            [
-                'title' => 'Revue de code',
-                'description' => 'Revoir les PR en attente sur le projet principal.',
-                'status' => TaskStatus::TODO,
-                'priority' => TaskPriority::MEDIUM,
-                'category' => 'Travail',
-                'dueDate' => new \DateTime('+3 days'),
-            ],
-            [
-                'title' => 'Mettre à jour les dépendances',
-                'description' => 'Effectuer les mises à jour de sécurité sur tous les projets.',
-                'status' => TaskStatus::TODO,
-                'priority' => TaskPriority::HIGH,
-                'category' => 'Travail',
-                'dueDate' => new \DateTime('-1 day'), // En retard !
-            ],
-        ];
-
-        foreach ($tasksData as $data) {
-            $task = new Task();
-            $task->setTitle($data['title']);
-            $task->setDescription($data['description']);
-            $task->setStatus($data['status']);
-            $task->setPriority($data['priority']);
-            $task->setOwner($user);
-            $task->setDueDate($data['dueDate']);
-
-            if (isset($categories[$data['category']])) {
-                $task->setCategory($categories[$data['category']]);
-            }
-
-            $manager->persist($task);
-        }
     }
 }

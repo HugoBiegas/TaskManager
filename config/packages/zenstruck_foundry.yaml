@@ -1,7 +1,0 @@
-# config/packages/zenstruck_foundry.yaml
-# Configuration de Foundry pour les fixtures de test
-when@dev: &dev
-    zenstruck_foundry:
-        auto_refresh_proxies: true
-
-when@test: *dev

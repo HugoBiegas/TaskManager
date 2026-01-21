@@ -1,0 +1,61 @@
+{% extends 'base.html.twig' %}
+
+{% block body %}
+<div class="min-h-full">
+    <nav class="bg-white shadow-sm border-b border-gray-200">
+        <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+            <div class="flex justify-between h-16">
+                <div class="flex">
+                    <div class="flex-shrink-0 flex items-center">
+                        <a href="{{ path('app_task_index') }}" class="flex items-center">
+                            <span class="text-2xl mr-2">✓</span>
+                            <span class="font-bold text-xl text-gray-900">TaskManager</span>
+                        </a>
+                    </div>
+                    <div class="hidden sm:ml-6 sm:flex sm:space-x-8">
+                        <a href="{{ path('app_task_index') }}"
+                           class="{% if app.request.attributes.get('_route') starts with 'app_task' %}border-primary-500 text-gray-900{% else %}border-transparent text-gray-500 hover:border-gray-300 hover:text-gray-700{% endif %} inline-flex items-center px-1 pt-1 border-b-2 text-sm font-medium">
+                            Mes tâches
+                        </a>
+                        <a href="{{ path('app_category_index') }}"
+                           class="{% if app.request.attributes.get('_route') starts with 'app_category' %}border-primary-500 text-gray-900{% else %}border-transparent text-gray-500 hover:border-gray-300 hover:text-gray-700{% endif %} inline-flex items-center px-1 pt-1 border-b-2 text-sm font-medium">
+                            Catégories
+                        </a>
+                        {% if is_granted('ROLE_ADMIN') %}
+                        <a href="{{ path('app_admin_users') }}"
+                           class="{% if app.request.attributes.get('_route') starts with 'app_admin' %}border-primary-500 text-gray-900{% else %}border-transparent text-gray-500 hover:border-gray-300 hover:text-gray-700{% endif %} inline-flex items-center px-1 pt-1 border-b-2 text-sm font-medium">
+                            Administration
+                        </a>
+                        {% endif %}
+                    </div>
+                </div>
+                <div class="hidden sm:ml-6 sm:flex sm:items-center">
+                    <div class="ml-3 relative flex items-center space-x-4">
+                        <a href="{{ path('app_profile_settings') }}" class="flex items-center text-sm text-gray-700 hover:text-gray-900">
+                            {% if app.user.avatarName %}
+                                <img class="h-8 w-8 rounded-full object-cover" src="{{ vich_uploader_asset(app.user, 'avatarFile') }}" alt="{{ app.user.fullName }}">
+                            {% else %}
+                                <div class="h-8 w-8 rounded-full bg-primary-100 flex items-center justify-center">
+                                    <span class="text-primary-700 font-medium text-sm">{{ app.user.firstName|first|upper }}{{ app.user.lastName|first|upper }}</span>
+                                </div>
+                            {% endif %}
+                            <span class="ml-2">{{ app.user.fullName }}</span>
+                        </a>
+                        <a href="{{ path('app_logout') }}" class="text-gray-500 hover:text-gray-700">
+                            <svg class="h-5 w-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M17 16l4-4m0 0l-4-4m4 4H7m6 4v1a3 3 0 01-3 3H6a3 3 0 01-3-3V7a3 3 0 013-3h4a3 3 0 013 3v1"></path>
+                            </svg>
+                        </a>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </nav>
+
+    <main class="py-10">
+        <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+            {% block content %}{% endblock %}
+        </div>
+    </main>
+</div>
+{% endblock %}

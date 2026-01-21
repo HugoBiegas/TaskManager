@@ -1,0 +1,105 @@
+{% extends '_layout/app.html.twig' %}
+
+{% block title %}Paramètres du profil - TaskManager{% endblock %}
+
+{% block content %}
+<div class="max-w-2xl mx-auto space-y-6">
+    <div>
+        <h1 class="text-2xl font-bold text-gray-900">Paramètres du profil</h1>
+        <p class="mt-1 text-sm text-gray-500">Gérez vos informations personnelles</p>
+    </div>
+
+    <div class="bg-white shadow rounded-lg">
+        <div class="px-6 py-4 border-b border-gray-200">
+            <h2 class="text-lg font-medium text-gray-900">Informations personnelles</h2>
+        </div>
+        <div class="px-6 py-4">
+            {{ form_start(form, {'attr': {'class': 'space-y-6', 'enctype': 'multipart/form-data'}}) }}
+                <div class="flex items-center space-x-6">
+                    <div class="shrink-0">
+                        {% if app.user.avatarName %}
+                            <img class="h-20 w-20 rounded-full object-cover" src="{{ vich_uploader_asset(app.user, 'avatarFile') }}" alt="{{ app.user.fullName }}">
+                        {% else %}
+                            <div class="h-20 w-20 rounded-full bg-primary-100 flex items-center justify-center">
+                                <span class="text-primary-700 font-medium text-2xl">{{ app.user.firstName|first|upper }}{{ app.user.lastName|first|upper }}</span>
+                            </div>
+                        {% endif %}
+                    </div>
+                    <div class="flex-1">
+                        {{ form_label(form.avatarFile) }}
+                        {{ form_widget(form.avatarFile) }}
+                        {{ form_errors(form.avatarFile) }}
+                        <p class="mt-1 text-sm text-gray-500">JPG, PNG, GIF ou WebP. Max 2MB.</p>
+                    </div>
+                </div>
+
+                <div class="grid grid-cols-2 gap-4">
+                    <div>
+                        {{ form_label(form.firstName) }}
+                        {{ form_widget(form.firstName) }}
+                        {{ form_errors(form.firstName) }}
+                    </div>
+                    <div>
+                        {{ form_label(form.lastName) }}
+                        {{ form_widget(form.lastName) }}
+                        {{ form_errors(form.lastName) }}
+                    </div>
+                </div>
+
+                <div>
+                    {{ form_label(form.email) }}
+                    {{ form_widget(form.email) }}
+                    {{ form_errors(form.email) }}
+                </div>
+
+                <div class="flex justify-end pt-4">
+                    <button type="submit"
+                            class="px-4 py-2 border border-transparent rounded-md shadow-sm text-sm font-medium text-white bg-primary-600 hover:bg-primary-700">
+                        Enregistrer les modifications
+                    </button>
+                </div>
+            {{ form_end(form) }}
+        </div>
+    </div>
+
+    <div class="bg-white shadow rounded-lg">
+        <div class="px-6 py-4 border-b border-gray-200">
+            <h2 class="text-lg font-medium text-gray-900">Sécurité</h2>
+        </div>
+        <div class="px-6 py-4">
+            <div class="flex items-center justify-between">
+                <div>
+                    <h3 class="text-sm font-medium text-gray-900">Mot de passe</h3>
+                    <p class="text-sm text-gray-500">Modifiez votre mot de passe pour sécuriser votre compte</p>
+                </div>
+                <a href="{{ path('app_profile_password') }}"
+                   class="px-4 py-2 border border-gray-300 rounded-md text-sm font-medium text-gray-700 bg-white hover:bg-gray-50">
+                    Changer le mot de passe
+                </a>
+            </div>
+        </div>
+    </div>
+
+    <div class="bg-white shadow rounded-lg">
+        <div class="px-6 py-4 border-b border-gray-200">
+            <h2 class="text-lg font-medium text-gray-900">Informations du compte</h2>
+        </div>
+        <div class="px-6 py-4 space-y-4">
+            <div class="flex justify-between items-center">
+                <span class="text-sm text-gray-500">Membre depuis</span>
+                <span class="text-sm font-medium text-gray-900">{{ app.user.createdAt|date('d/m/Y') }}</span>
+            </div>
+            <div class="flex justify-between items-center">
+                <span class="text-sm text-gray-500">Nombre de tâches</span>
+                <span class="text-sm font-medium text-gray-900">{{ app.user.tasks|length }}</span>
+            </div>
+            <div class="flex justify-between items-center">
+                <span class="text-sm text-gray-500">Rôle</span>
+                <span class="text-sm font-medium text-gray-900">
+                    {% if app.user.admin %}Administrateur{% else %}Utilisateur{% endif %}
+                </span>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}

@@ -1,0 +1,39 @@
+# Git
+.git
+.gitignore
+
+# IDE
+.idea
+.vscode
+*.swp
+*.swo
+
+# Development files
+docker-compose*.yml
+compose*.yaml
+.env.local
+.env.test
+.env.*.local
+
+# Cache and logs (will be generated)
+var/cache/*
+var/log/*
+!var/cache/.gitkeep
+!var/log/.gitkeep
+
+# Tests
+tests/
+phpunit.xml.dist
+phpunit.dist.xml
+.phpunit.cache
+
+# Documentation
+README.md
+docs/
+
+# Node modules (if any)
+node_modules/
+
+# Uploads (user content)
+public/uploads/*
+!public/uploads/.gitkeep

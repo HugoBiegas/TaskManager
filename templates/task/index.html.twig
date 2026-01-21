@@ -1,200 +1,187 @@
-{% extends 'base.html.twig' %}
+{% extends '_layout/app.html.twig' %}
 
-{% block title %}Mes Tâches - TaskManager{% endblock %}
+{% block title %}Mes tâches - TaskManager{% endblock %}
 
-{% block body %}
-<div class="d-flex justify-content-between align-items-center mb-4">
-    <h1 class="h3 mb-0">
-        <i class="bi bi-list-task text-primary me-2"></i>
-        Mes Tâches
-    </h1>
-    <a href="{{ path('app_task_new') }}" class="btn btn-primary">
-        <i class="bi bi-plus-lg me-1"></i>
-        Nouvelle tâche
-    </a>
-</div>
+{% block content %}
+<div class="space-y-6">
+    <div class="flex justify-between items-center">
+        <div>
+            <h1 class="text-2xl font-bold text-gray-900">Mes tâches</h1>
+            <p class="mt-1 text-sm text-gray-500">
+                {{ stats.total }} tâche{{ stats.total > 1 ? 's' : '' }} au total
+                {% if stats.overdue > 0 %}
+                    <span class="text-red-600">({{ stats.overdue }} en retard)</span>
+                {% endif %}
+            </p>
+        </div>
+        <a href="{{ path('app_task_new') }}"
+           class="inline-flex items-center px-4 py-2 border border-transparent text-sm font-medium rounded-md shadow-sm text-white bg-primary-600 hover:bg-primary-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-primary-500">
+            <svg class="h-5 w-5 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 4v16m8-8H4"></path>
+            </svg>
+            Nouvelle tâche
+        </a>
+    </div>
 
-{# Statistiques #}
-<div class="row g-3 mb-4">
-    <div class="col-sm-6 col-lg-3">
-        <div class="stats-card todo">
-            <div class="d-flex justify-content-between align-items-center">
-                <div>
-                    <div class="h4 mb-0">{{ stats.todo ?? 0 }}</div>
-                    <small>À faire</small>
+    <div class="grid grid-cols-2 md:grid-cols-4 gap-4">
+        <div class="bg-white rounded-lg shadow p-4">
+            <div class="text-sm font-medium text-gray-500">À faire</div>
+            <div class="mt-1 text-2xl font-semibold text-gray-900">{{ stats.todo }}</div>
+        </div>
+        <div class="bg-white rounded-lg shadow p-4">
+            <div class="text-sm font-medium text-gray-500">En cours</div>
+            <div class="mt-1 text-2xl font-semibold text-blue-600">{{ stats.in_progress }}</div>
+        </div>
+        <div class="bg-white rounded-lg shadow p-4">
+            <div class="text-sm font-medium text-gray-500">Terminées</div>
+            <div class="mt-1 text-2xl font-semibold text-green-600">{{ stats.done }}</div>
+        </div>
+        <div class="bg-white rounded-lg shadow p-4">
+            <div class="text-sm font-medium text-gray-500">En retard</div>
+            <div class="mt-1 text-2xl font-semibold text-red-600">{{ stats.overdue }}</div>
+        </div>
+    </div>
+
+    <div class="bg-white shadow rounded-lg">
+        <div class="p-4 border-b border-gray-200">
+            <form method="get" class="flex flex-wrap gap-4 items-end">
+                <div class="flex-1 min-w-[200px]">
+                    <label for="search" class="block text-sm font-medium text-gray-700">Rechercher</label>
+                    <input type="text" name="search" id="search" value="{{ search }}"
+                           placeholder="Titre ou description..."
+                           class="mt-1 block w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm focus:outline-none focus:ring-primary-500 focus:border-primary-500 sm:text-sm">
                 </div>
-                <i class="bi bi-clipboard2 fs-2 opacity-50"></i>
-            </div>
-        </div>
-    </div>
-    <div class="col-sm-6 col-lg-3">
-        <div class="stats-card progress">
-            <div class="d-flex justify-content-between align-items-center">
                 <div>
-                    <div class="h4 mb-0">{{ stats.in_progress ?? 0 }}</div>
-                    <small>En cours</small>
+                    <label for="status" class="block text-sm font-medium text-gray-700">Statut</label>
+                    <select name="status" id="status"
+                            class="mt-1 block w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm focus:outline-none focus:ring-primary-500 focus:border-primary-500 sm:text-sm">
+                        <option value="">Tous les statuts</option>
+                        {% for status in statuses %}
+                            <option value="{{ status.value }}" {% if currentStatus == status.value %}selected{% endif %}>
+                                {{ status.label }}
+                            </option>
+                        {% endfor %}
+                    </select>
                 </div>
-                <i class="bi bi-hourglass-split fs-2 opacity-50"></i>
-            </div>
-        </div>
-    </div>
-    <div class="col-sm-6 col-lg-3">
-        <div class="stats-card done">
-            <div class="d-flex justify-content-between align-items-center">
                 <div>
-                    <div class="h4 mb-0">{{ stats.done ?? 0 }}</div>
-                    <small>Terminées</small>
+                    <label for="category" class="block text-sm font-medium text-gray-700">Catégorie</label>
+                    <select name="category" id="category"
+                            class="mt-1 block w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm focus:outline-none focus:ring-primary-500 focus:border-primary-500 sm:text-sm">
+                        <option value="">Toutes les catégories</option>
+                        {% for category in categories %}
+                            <option value="{{ category.id }}" {% if currentCategory == category.id %}selected{% endif %}>
+                                {{ category.name }}
+                            </option>
+                        {% endfor %}
+                    </select>
                 </div>
-                <i class="bi bi-check-circle fs-2 opacity-50"></i>
-            </div>
-        </div>
-    </div>
-    <div class="col-sm-6 col-lg-3">
-        <div class="stats-card overdue">
-            <div class="d-flex justify-content-between align-items-center">
                 <div>
-                    <div class="h4 mb-0">{{ overdueTasks|length }}</div>
-                    <small>En retard</small>
+                    <button type="submit"
+                            class="inline-flex items-center px-4 py-2 border border-gray-300 text-sm font-medium rounded-md text-gray-700 bg-white hover:bg-gray-50 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-primary-500">
+                        Filtrer
+                    </button>
+                    {% if search or currentStatus or currentCategory %}
+                        <a href="{{ path('app_task_index') }}"
+                           class="ml-2 inline-flex items-center px-4 py-2 border border-transparent text-sm font-medium rounded-md text-primary-700 bg-primary-100 hover:bg-primary-200">
+                            Réinitialiser
+                        </a>
+                    {% endif %}
                 </div>
-                <i class="bi bi-exclamation-triangle fs-2 opacity-50"></i>
+            </form>
+        </div>
+
+        {% if tasks is empty %}
+            <div class="text-center py-12">
+                <svg class="mx-auto h-12 w-12 text-gray-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 5H7a2 2 0 00-2 2v10a2 2 0 002 2h8a2 2 0 002-2V7a2 2 0 00-2-2h-2M9 5a2 2 0 002 2h2a2 2 0 002-2M9 5a2 2 0 012-2h2a2 2 0 012 2m-6 9l2 2 4-4"></path>
+                </svg>
+                <h3 class="mt-2 text-sm font-medium text-gray-900">Aucune tâche</h3>
+                <p class="mt-1 text-sm text-gray-500">Commencez par créer une nouvelle tâche.</p>
+                <div class="mt-6">
+                    <a href="{{ path('app_task_new') }}"
+                       class="inline-flex items-center px-4 py-2 border border-transparent shadow-sm text-sm font-medium rounded-md text-white bg-primary-600 hover:bg-primary-700">
+                        <svg class="h-5 w-5 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 4v16m8-8H4"></path>
+                        </svg>
+                        Nouvelle tâche
+                    </a>
+                </div>
             </div>
-        </div>
-    </div>
-</div>
-
-{# Filtres par statut #}
-<div class="card mb-4">
-    <div class="card-body py-2">
-        <div class="d-flex gap-2 flex-wrap">
-            <a href="{{ path('app_task_index') }}"
-               class="btn btn-sm {{ currentStatus is null ? 'btn-primary' : 'btn-outline-secondary' }}">
-                Toutes
-            </a>
-            <a href="{{ path('app_task_index', {status: 'todo'}) }}"
-               class="btn btn-sm {{ currentStatus == 'todo' ? 'btn-primary' : 'btn-outline-secondary' }}">
-                À faire
-            </a>
-            <a href="{{ path('app_task_index', {status: 'in_progress'}) }}"
-               class="btn btn-sm {{ currentStatus == 'in_progress' ? 'btn-primary' : 'btn-outline-secondary' }}">
-                En cours
-            </a>
-            <a href="{{ path('app_task_index', {status: 'done'}) }}"
-               class="btn btn-sm {{ currentStatus == 'done' ? 'btn-primary' : 'btn-outline-secondary' }}">
-                Terminées
-            </a>
-        </div>
-    </div>
-</div>
-
-{# Alertes tâches urgentes #}
-{% if todayTasks|length > 0 %}
-    <div class="alert alert-warning d-flex align-items-center mb-4">
-        <i class="bi bi-bell me-2"></i>
-        <span>
-            <strong>{{ todayTasks|length }} tâche(s)</strong> à faire aujourd'hui
-        </span>
-    </div>
-{% endif %}
-
-{# Liste des tâches #}
-{% if tasks|length > 0 %}
-    <div class="row g-3">
-        {% for task in tasks %}
-            <div class="col-md-6 col-lg-4">
-                <div class="card task-card h-100 {{ task.isOverdue ? 'overdue' : (task.isDueToday ? 'due-today' : '') }}">
-                    <div class="card-body">
-                        <div class="d-flex justify-content-between align-items-start mb-2">
-                            <span class="badge bg-{{ task.status.color }}">
-                                {{ task.status.label }}
-                            </span>
-                            <span class="badge priority-badge bg-{{ task.priority.color }}">
-                                {{ task.priority.label }}
-                            </span>
-                        </div>
-
-                        <h5 class="card-title mb-2">
-                            <a href="{{ path('app_task_show', {id: task.id}) }}" class="text-decoration-none text-dark">
-                                {{ task.title }}
-                            </a>
-                        </h5>
-
-                        {% if task.description %}
-                            <p class="card-text text-muted small mb-2">
-                                {{ task.description|length > 100 ? task.description|slice(0, 100) ~ '...' : task.description }}
-                            </p>
-                        {% endif %}
-
-                        <div class="d-flex justify-content-between align-items-center mt-3">
-                            <div class="small text-muted">
+        {% else %}
+            <ul class="divide-y divide-gray-200">
+                {% for task in tasks %}
+                    <li class="p-4 hover:bg-gray-50 {% if task.overdue %}bg-red-50{% endif %}">
+                        <div class="flex items-center justify-between">
+                            <div class="flex items-center min-w-0 flex-1">
+                                <form method="post" action="{{ path('app_task_toggle_status', {id: task.id}) }}" class="mr-4">
+                                    <input type="hidden" name="_token" value="{{ csrf_token('toggle' ~ task.id) }}">
+                                    <button type="submit" class="focus:outline-none" title="Changer le statut">
+                                        {% if task.status.value == 'done' %}
+                                            <svg class="h-6 w-6 text-green-500" fill="currentColor" viewBox="0 0 24 24">
+                                                <path d="M12 2C6.48 2 2 6.48 2 12s4.48 10 10 10 10-4.48 10-10S17.52 2 12 2zm-2 15l-5-5 1.41-1.41L10 14.17l7.59-7.59L19 8l-9 9z"></path>
+                                            </svg>
+                                        {% elseif task.status.value == 'in_progress' %}
+                                            <svg class="h-6 w-6 text-blue-500" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z"></path>
+                                            </svg>
+                                        {% else %}
+                                            <svg class="h-6 w-6 text-gray-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                                <circle cx="12" cy="12" r="10" stroke-width="2"></circle>
+                                            </svg>
+                                        {% endif %}
+                                    </button>
+                                </form>
+                                <div class="min-w-0 flex-1">
+                                    <a href="{{ path('app_task_show', {id: task.id}) }}" class="block">
+                                        <p class="text-sm font-medium text-gray-900 truncate {% if task.status.value == 'done' %}line-through text-gray-500{% endif %}">
+                                            {{ task.title }}
+                                        </p>
+                                        {% if task.description %}
+                                            <p class="text-sm text-gray-500 truncate">{{ task.description|slice(0, 100) }}</p>
+                                        {% endif %}
+                                    </a>
+                                </div>
+                            </div>
+                            <div class="ml-4 flex items-center space-x-4">
                                 {% if task.category %}
-                                    <span class="me-2">
-                                        <i class="bi bi-tag" style="color: {{ task.category.color }}"></i>
+                                    <span class="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium"
+                                          style="background-color: {{ task.category.color }}20; color: {{ task.category.color }}">
                                         {{ task.category.name }}
                                     </span>
                                 {% endif %}
-
+                                <span class="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium
+                                    {% if task.priority.value == 'urgent' %}bg-red-100 text-red-800
+                                    {% elseif task.priority.value == 'high' %}bg-orange-100 text-orange-800
+                                    {% elseif task.priority.value == 'medium' %}bg-blue-100 text-blue-800
+                                    {% else %}bg-gray-100 text-gray-800{% endif %}">
+                                    {{ task.priority.label }}
+                                </span>
                                 {% if task.dueDate %}
-                                    <span class="{{ task.isOverdue ? 'text-danger' : '' }}">
-                                        <i class="bi bi-calendar"></i>
+                                    <span class="text-sm {% if task.overdue %}text-red-600 font-medium{% elseif task.dueToday %}text-orange-600{% else %}text-gray-500{% endif %}">
                                         {{ task.dueDate|date('d/m/Y') }}
                                     </span>
                                 {% endif %}
-                            </div>
-
-                            <div class="dropdown">
-                                <button class="btn btn-sm btn-outline-secondary"
-                                        type="button"
-                                        data-bs-toggle="dropdown">
-                                    <i class="bi bi-three-dots"></i>
-                                </button>
-                                <ul class="dropdown-menu dropdown-menu-end">
-                                    <li>
-                                        <a class="dropdown-item" href="{{ path('app_task_edit', {id: task.id}) }}">
-                                            <i class="bi bi-pencil me-2"></i>Modifier
-                                        </a>
-                                    </li>
-                                    {% if task.status.value != 'done' %}
-                                        <li>
-                                            <form method="post" action="{{ path('app_task_change_status', {id: task.id, status: 'done'}) }}">
-                                                <input type="hidden" name="_token" value="{{ csrf_token('status' ~ task.id) }}">
-                                                <button class="dropdown-item text-success" type="submit">
-                                                    <i class="bi bi-check-lg me-2"></i>Marquer terminée
-                                                </button>
-                                            </form>
-                                        </li>
-                                    {% endif %}
-                                    <li><hr class="dropdown-divider"></li>
-                                    <li>
-                                        <form method="post"
-                                              action="{{ path('app_task_delete', {id: task.id}) }}"
-                                              onsubmit="return confirm('Êtes-vous sûr de vouloir supprimer cette tâche ?');">
-                                            <input type="hidden" name="_token" value="{{ csrf_token('delete' ~ task.id) }}">
-                                            <button class="dropdown-item text-danger" type="submit">
-                                                <i class="bi bi-trash me-2"></i>Supprimer
-                                            </button>
-                                        </form>
-                                    </li>
-                                </ul>
+                                <div class="flex items-center space-x-2">
+                                    <a href="{{ path('app_task_edit', {id: task.id}) }}" class="text-gray-400 hover:text-gray-500">
+                                        <svg class="h-5 w-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M11 5H6a2 2 0 00-2 2v11a2 2 0 002 2h11a2 2 0 002-2v-5m-1.414-9.414a2 2 0 112.828 2.828L11.828 15H9v-2.828l8.586-8.586z"></path>
+                                        </svg>
+                                    </a>
+                                    <form method="post" action="{{ path('app_task_delete', {id: task.id}) }}" onsubmit="return confirm('Supprimer cette tâche ?')">
+                                        <input type="hidden" name="_token" value="{{ csrf_token('delete' ~ task.id) }}">
+                                        <button type="submit" class="text-gray-400 hover:text-red-500">
+                                            <svg class="h-5 w-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16"></path>
+                                            </svg>
+                                        </button>
+                                    </form>
+                                </div>
                             </div>
                         </div>
-                    </div>
-                </div>
-            </div>
-        {% endfor %}
+                    </li>
+                {% endfor %}
+            </ul>
+        {% endif %}
     </div>
-{% else %}
-    <div class="card">
-        <div class="card-body text-center py-5">
-            <i class="bi bi-inbox text-muted" style="font-size: 4rem;"></i>
-            <h4 class="mt-3">Aucune tâche</h4>
-            <p class="text-muted">
-                {{ currentStatus ? 'Aucune tâche avec ce statut.' : 'Commencez par créer votre première tâche !' }}
-            </p>
-            <a href="{{ path('app_task_new') }}" class="btn btn-primary">
-                <i class="bi bi-plus-lg me-1"></i>
-                Créer une tâche
-            </a>
-        </div>
-    </div>
-{% endif %}
+</div>
 {% endblock %}

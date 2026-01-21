@@ -1,11 +1,5 @@
-# config/packages/debug.yaml
 when@dev:
     debug:
+        # Forwards VarDumper Data clones to a centralized server allowing to inspect dumps on CLI or in your browser.
+        # See the "server:dump" command to start a new server.
         dump_destination: "tcp://%env(VAR_DUMPER_SERVER)%"
-
-    # Si VAR_DUMPER_SERVER n'est pas défini, utiliser la sortie standard
-    # Lancer avec: symfony server:dump
-
-when@test:
-    debug:
-        dump_destination: null

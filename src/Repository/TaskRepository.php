@@ -2,13 +2,10 @@
 
 namespace App\Repository;
 
-use App\Entity\Category;
 use App\Entity\Task;
-use App\Entity\TaskPriority;
-use App\Entity\TaskStatus;
 use App\Entity\User;
+use App\Enum\TaskStatus;
 use Doctrine\Bundle\DoctrineBundle\Repository\ServiceEntityRepository;
-use Doctrine\ORM\QueryBuilder;
 use Doctrine\Persistence\ManagerRegistry;
 
 /**
@@ -22,223 +19,166 @@ class TaskRepository extends ServiceEntityRepository
     }
 
     /**
-     * Crée le QueryBuilder de base pour les tâches d'un utilisateur
-     */
-    public function createQueryBuilderForUser(User $user): QueryBuilder
-    {
-        return $this->createQueryBuilder('t')
-            ->andWhere('t.owner = :owner')
-            ->setParameter('owner', $user)
-            ->orderBy('t.createdAt', 'DESC');
-    }
-
-    /**
-     * Trouve toutes les tâches d'un utilisateur avec les relations chargées
-     *
      * @return Task[]
      */
-    public function findByOwnerWithCategory(User $user): array
-    {
-        return $this->createQueryBuilder('t')
-            ->select('t', 'c')
-            ->leftJoin('t.category', 'c')
-            ->andWhere('t.owner = :owner')
-            ->setParameter('owner', $user)
-            ->orderBy('t.dueDate', 'ASC')
-            ->addOrderBy('t.priority', 'DESC')
-            ->getQuery()
-            ->getResult();
-    }
-
-    /**
-     * Trouve les tâches d'un utilisateur par statut
-     *
-     * @return Task[]
-     */
-    public function findByOwnerAndStatus(User $user, TaskStatus $status): array
-    {
-        return $this->createQueryBuilder('t')
-            ->select('t', 'c')
-            ->leftJoin('t.category', 'c')
-            ->andWhere('t.owner = :owner')
-            ->andWhere('t.status = :status')
-            ->setParameter('owner', $user)
-            ->setParameter('status', $status)
-            ->orderBy('t.dueDate', 'ASC')
-            ->getQuery()
-            ->getResult();
-    }
-
-    /**
-     * Trouve les tâches en retard d'un utilisateur
-     *
-     * @return Task[]
-     */
-    public function findOverdue(User $user): array
+    public function findByOwner(User $owner): array
     {
         return $this->createQueryBuilder('t')
             ->andWhere('t.owner = :owner')
-            ->andWhere('t.dueDate < :today')
-            ->andWhere('t.status NOT IN (:excludedStatuses)')
-            ->setParameter('owner', $user)
-            ->setParameter('today', new \DateTime('today'))
-            ->setParameter('excludedStatuses', [TaskStatus::DONE, TaskStatus::CANCELLED])
-            ->orderBy('t.dueDate', 'ASC')
-            ->getQuery()
-            ->getResult();
-    }
-
-    /**
-     * Trouve les tâches dues aujourd'hui
-     *
-     * @return Task[]
-     */
-    public function findDueToday(User $user): array
-    {
-        $today = new \DateTime('today');
-        $tomorrow = new \DateTime('tomorrow');
-
-        return $this->createQueryBuilder('t')
-            ->andWhere('t.owner = :owner')
-            ->andWhere('t.dueDate >= :today')
-            ->andWhere('t.dueDate < :tomorrow')
-            ->andWhere('t.status NOT IN (:excludedStatuses)')
-            ->setParameter('owner', $user)
-            ->setParameter('today', $today)
-            ->setParameter('tomorrow', $tomorrow)
-            ->setParameter('excludedStatuses', [TaskStatus::DONE, TaskStatus::CANCELLED])
-            ->orderBy('t.priority', 'DESC')
-            ->getQuery()
-            ->getResult();
-    }
-
-    /**
-     * Trouve les tâches par catégorie
-     *
-     * @return Task[]
-     */
-    public function findByCategory(User $user, Category $category): array
-    {
-        return $this->createQueryBuilder('t')
-            ->andWhere('t.owner = :owner')
-            ->andWhere('t.category = :category')
-            ->setParameter('owner', $user)
-            ->setParameter('category', $category)
-            ->orderBy('t.dueDate', 'ASC')
-            ->getQuery()
-            ->getResult();
-    }
-
-    /**
-     * Recherche les tâches par titre ou description
-     *
-     * @return Task[]
-     */
-    public function search(User $user, string $query): array
-    {
-        return $this->createQueryBuilder('t')
-            ->select('t', 'c')
-            ->leftJoin('t.category', 'c')
-            ->andWhere('t.owner = :owner')
-            ->andWhere('t.title LIKE :query OR t.description LIKE :query')
-            ->setParameter('owner', $user)
-            ->setParameter('query', '%' . $query . '%')
+            ->setParameter('owner', $owner)
             ->orderBy('t.createdAt', 'DESC')
             ->getQuery()
             ->getResult();
     }
 
     /**
-     * Compte les tâches par statut pour un utilisateur
-     *
-     * @return array<string, int>
-     */
-    public function countByStatus(User $user): array
-    {
-        $result = $this->createQueryBuilder('t')
-            ->select('t.status', 'COUNT(t.id) as count')
-            ->andWhere('t.owner = :owner')
-            ->setParameter('owner', $user)
-            ->groupBy('t.status')
-            ->getQuery()
-            ->getResult();
-
-        $counts = [];
-        foreach (TaskStatus::cases() as $status) {
-            $counts[$status->value] = 0;
-        }
-
-        foreach ($result as $row) {
-            $counts[$row['status']->value] = (int) $row['count'];
-        }
-
-        return $counts;
-    }
-
-    /**
-     * Trouve les tâches urgentes non complétées
-     *
      * @return Task[]
      */
-    public function findUrgent(User $user): array
+    public function findByOwnerAndStatus(User $owner, TaskStatus $status): array
     {
         return $this->createQueryBuilder('t')
             ->andWhere('t.owner = :owner')
-            ->andWhere('t.priority = :priority')
-            ->andWhere('t.status NOT IN (:excludedStatuses)')
-            ->setParameter('owner', $user)
-            ->setParameter('priority', TaskPriority::URGENT)
-            ->setParameter('excludedStatuses', [TaskStatus::DONE, TaskStatus::CANCELLED])
+            ->andWhere('t.status = :status')
+            ->setParameter('owner', $owner)
+            ->setParameter('status', $status)
+            ->orderBy('t.priority', 'DESC')
+            ->addOrderBy('t.dueDate', 'ASC')
+            ->getQuery()
+            ->getResult();
+    }
+
+    /**
+     * @return Task[]
+     */
+    public function findPendingByOwner(User $owner): array
+    {
+        return $this->createQueryBuilder('t')
+            ->andWhere('t.owner = :owner')
+            ->andWhere('t.status IN (:statuses)')
+            ->setParameter('owner', $owner)
+            ->setParameter('statuses', [TaskStatus::TODO, TaskStatus::IN_PROGRESS])
+            ->orderBy('t.priority', 'DESC')
+            ->addOrderBy('t.dueDate', 'ASC')
+            ->getQuery()
+            ->getResult();
+    }
+
+    /**
+     * @return Task[]
+     */
+    public function findOverdueByOwner(User $owner): array
+    {
+        return $this->createQueryBuilder('t')
+            ->andWhere('t.owner = :owner')
+            ->andWhere('t.status IN (:statuses)')
+            ->andWhere('t.dueDate < :today')
+            ->setParameter('owner', $owner)
+            ->setParameter('statuses', [TaskStatus::TODO, TaskStatus::IN_PROGRESS])
+            ->setParameter('today', new \DateTimeImmutable('today'))
             ->orderBy('t.dueDate', 'ASC')
             ->getQuery()
             ->getResult();
     }
 
     /**
-     * Statistiques des tâches complétées par période
-     *
+     * @return Task[]
+     */
+    public function findDueTodayByOwner(User $owner): array
+    {
+        $today = new \DateTimeImmutable('today');
+
+        return $this->createQueryBuilder('t')
+            ->andWhere('t.owner = :owner')
+            ->andWhere('t.status IN (:statuses)')
+            ->andWhere('t.dueDate = :today')
+            ->setParameter('owner', $owner)
+            ->setParameter('statuses', [TaskStatus::TODO, TaskStatus::IN_PROGRESS])
+            ->setParameter('today', $today)
+            ->orderBy('t.priority', 'DESC')
+            ->getQuery()
+            ->getResult();
+    }
+
+    /**
+     * @return Task[]
+     */
+    public function findByOwnerWithFilters(
+        User $owner,
+        ?TaskStatus $status = null,
+        ?int $categoryId = null,
+        ?string $search = null
+    ): array {
+        $qb = $this->createQueryBuilder('t')
+            ->leftJoin('t.category', 'c')
+            ->andWhere('t.owner = :owner')
+            ->setParameter('owner', $owner);
+
+        if ($status !== null) {
+            $qb->andWhere('t.status = :status')
+                ->setParameter('status', $status);
+        }
+
+        if ($categoryId !== null) {
+            $qb->andWhere('t.category = :categoryId')
+                ->setParameter('categoryId', $categoryId);
+        }
+
+        if ($search !== null && $search !== '') {
+            $qb->andWhere('(t.title LIKE :search OR t.description LIKE :search)')
+                ->setParameter('search', '%' . $search . '%');
+        }
+
+        return $qb
+            ->orderBy('t.priority', 'DESC')
+            ->addOrderBy('t.dueDate', 'ASC')
+            ->addOrderBy('t.createdAt', 'DESC')
+            ->getQuery()
+            ->getResult();
+    }
+
+    /**
      * @return array<string, int>
      */
-    public function getCompletionStats(User $user, \DateTimeInterface $from, \DateTimeInterface $to): array
+    public function getStatsByOwner(User $owner): array
     {
-        $result = $this->createQueryBuilder('t')
-            ->select('DATE(t.completedAt) as date', 'COUNT(t.id) as count')
+        $results = $this->createQueryBuilder('t')
+            ->select('t.status, COUNT(t.id) as count')
             ->andWhere('t.owner = :owner')
-            ->andWhere('t.status = :status')
-            ->andWhere('t.completedAt >= :from')
-            ->andWhere('t.completedAt <= :to')
-            ->setParameter('owner', $user)
-            ->setParameter('status', TaskStatus::DONE)
-            ->setParameter('from', $from)
-            ->setParameter('to', $to)
-            ->groupBy('date')
-            ->orderBy('date', 'ASC')
+            ->setParameter('owner', $owner)
+            ->groupBy('t.status')
             ->getQuery()
             ->getResult();
 
-        $stats = [];
-        foreach ($result as $row) {
-            $stats[$row['date']] = (int) $row['count'];
+        $stats = [
+            'total' => 0,
+            'todo' => 0,
+            'in_progress' => 0,
+            'done' => 0,
+            'cancelled' => 0,
+            'overdue' => 0,
+        ];
+
+        foreach ($results as $result) {
+            $status = $result['status']->value;
+            $count = (int) $result['count'];
+            $stats[$status] = $count;
+            $stats['total'] += $count;
         }
+
+        // Count overdue tasks
+        $overdueCount = $this->createQueryBuilder('t')
+            ->select('COUNT(t.id)')
+            ->andWhere('t.owner = :owner')
+            ->andWhere('t.status IN (:statuses)')
+            ->andWhere('t.dueDate < :today')
+            ->setParameter('owner', $owner)
+            ->setParameter('statuses', [TaskStatus::TODO, TaskStatus::IN_PROGRESS])
+            ->setParameter('today', new \DateTimeImmutable('today'))
+            ->getQuery()
+            ->getSingleScalarResult();
+
+        $stats['overdue'] = (int) $overdueCount;
 
         return $stats;
-    }
-
-    public function save(Task $entity, bool $flush = false): void
-    {
-        $this->getEntityManager()->persist($entity);
-
-        if ($flush) {
-            $this->getEntityManager()->flush();
-        }
-    }
-
-    public function remove(Task $entity, bool $flush = false): void
-    {
-        $this->getEntityManager()->remove($entity);
-
-        if ($flush) {
-            $this->getEntityManager()->flush();
-        }
     }
 }

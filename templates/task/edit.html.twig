@@ -1,74 +1,83 @@
-{% extends 'base.html.twig' %}
+{% extends '_layout/app.html.twig' %}
 
-{% block title %}Modifier : {{ task.title }} - TaskManager{% endblock %}
+{% block title %}Modifier la tâche - TaskManager{% endblock %}
 
-{% block body %}
-<div class="mb-4">
-    <a href="{{ path('app_task_show', {id: task.id}) }}" class="text-decoration-none">
-        <i class="bi bi-arrow-left me-1"></i>
-        Retour à la tâche
-    </a>
-</div>
+{% block content %}
+<div class="max-w-2xl mx-auto">
+    <div class="mb-6">
+        <a href="{{ path('app_task_index') }}" class="inline-flex items-center text-sm text-gray-500 hover:text-gray-700">
+            <svg class="h-5 w-5 mr-1" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M10 19l-7-7m0 0l7-7m-7 7h18"></path>
+            </svg>
+            Retour aux tâches
+        </a>
+    </div>
 
-<div class="row justify-content-center">
-    <div class="col-lg-8">
-        <div class="card">
-            <div class="card-header">
-                <h4 class="mb-0">
-                    <i class="bi bi-pencil text-primary me-2"></i>
-                    Modifier la tâche
-                </h4>
-            </div>
-            <div class="card-body">
-                {{ form_start(form) }}
-                    <div class="mb-3">
-                        {{ form_row(form.title) }}
+    <div class="bg-white shadow rounded-lg">
+        <div class="px-6 py-4 border-b border-gray-200">
+            <h1 class="text-xl font-semibold text-gray-900">Modifier la tâche</h1>
+        </div>
+        <div class="px-6 py-4">
+            {{ form_start(form, {'attr': {'class': 'space-y-6'}}) }}
+                <div>
+                    {{ form_label(form.title) }}
+                    {{ form_widget(form.title) }}
+                    {{ form_errors(form.title) }}
+                </div>
+
+                <div>
+                    {{ form_label(form.description) }}
+                    {{ form_widget(form.description) }}
+                    {{ form_errors(form.description) }}
+                </div>
+
+                <div class="grid grid-cols-2 gap-4">
+                    <div>
+                        {{ form_label(form.status) }}
+                        {{ form_widget(form.status) }}
+                        {{ form_errors(form.status) }}
                     </div>
-
-                    <div class="mb-3">
-                        {{ form_row(form.description) }}
+                    <div>
+                        {{ form_label(form.priority) }}
+                        {{ form_widget(form.priority) }}
+                        {{ form_errors(form.priority) }}
                     </div>
+                </div>
 
-                    <div class="row">
-                        <div class="col-md-6 mb-3">
-                            {{ form_row(form.priority) }}
-                        </div>
-                        <div class="col-md-6 mb-3">
-                            {{ form_row(form.status) }}
-                        </div>
+                <div class="grid grid-cols-2 gap-4">
+                    <div>
+                        {{ form_label(form.dueDate) }}
+                        {{ form_widget(form.dueDate) }}
+                        {{ form_errors(form.dueDate) }}
                     </div>
-
-                    <div class="row">
-                        <div class="col-md-6 mb-3">
-                            {{ form_row(form.dueDate) }}
-                        </div>
-                        <div class="col-md-6 mb-3">
-                            {{ form_row(form.category) }}
-                        </div>
+                    <div>
+                        {{ form_label(form.category) }}
+                        {{ form_widget(form.category) }}
+                        {{ form_errors(form.category) }}
                     </div>
+                </div>
 
-                    <div class="d-flex gap-2 justify-content-between">
-                        <form method="post"
-                              action="{{ path('app_task_delete', {id: task.id}) }}"
-                              onsubmit="return confirm('Êtes-vous sûr de vouloir supprimer cette tâche ?');">
-                            <input type="hidden" name="_token" value="{{ csrf_token('delete' ~ task.id) }}">
-                            <button type="submit" class="btn btn-outline-danger">
-                                <i class="bi bi-trash me-1"></i>
-                                Supprimer
-                            </button>
-                        </form>
+                <div class="flex justify-end space-x-3 pt-4">
+                    <a href="{{ path('app_task_index') }}"
+                       class="px-4 py-2 border border-gray-300 rounded-md text-sm font-medium text-gray-700 bg-white hover:bg-gray-50">
+                        Annuler
+                    </a>
+                    <button type="submit"
+                            class="px-4 py-2 border border-transparent rounded-md shadow-sm text-sm font-medium text-white bg-primary-600 hover:bg-primary-700">
+                        Enregistrer
+                    </button>
+                </div>
+            {{ form_end(form) }}
 
-                        <div class="d-flex gap-2">
-                            <a href="{{ path('app_task_show', {id: task.id}) }}" class="btn btn-outline-secondary">
-                                Annuler
-                            </a>
-                            <button type="submit" class="btn btn-primary">
-                                <i class="bi bi-check-lg me-1"></i>
-                                Enregistrer
-                            </button>
-                        </div>
-                    </div>
-                {{ form_end(form) }}
+            {# Delete form outside the edit form #}
+            <div class="px-6 py-4 border-t border-gray-200 bg-gray-50">
+                <form method="post" action="{{ path('app_task_delete', {id: task.id}) }}" onsubmit="return confirm('Êtes-vous sûr de vouloir supprimer cette tâche ?')">
+                    <input type="hidden" name="_token" value="{{ csrf_token('delete' ~ task.id) }}">
+                    <button type="submit"
+                            class="px-4 py-2 border border-red-300 rounded-md text-sm font-medium text-red-700 bg-white hover:bg-red-50">
+                        Supprimer cette tâche
+                    </button>
+                </form>
             </div>
         </div>
     </div>

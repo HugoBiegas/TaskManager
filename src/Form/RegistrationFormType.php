@@ -14,41 +14,32 @@ use Symfony\Component\OptionsResolver\OptionsResolver;
 use Symfony\Component\Validator\Constraints\IsTrue;
 use Symfony\Component\Validator\Constraints\Length;
 use Symfony\Component\Validator\Constraints\NotBlank;
-use Symfony\Component\Validator\Constraints\PasswordStrength;
+use Symfony\Component\Validator\Constraints\Regex;
 
 class RegistrationFormType extends AbstractType
 {
     public function buildForm(FormBuilderInterface $builder, array $options): void
     {
         $builder
-            ->add('email', EmailType::class, [
-                'label' => 'Email',
-                'attr' => [
-                    'placeholder' => 'votre@email.com',
-                    'autocomplete' => 'email',
-                ],
-            ])
             ->add('firstName', TextType::class, [
                 'label' => 'Prénom',
                 'attr' => [
-                    'placeholder' => 'Jean',
+                    'placeholder' => 'Votre prénom',
                     'autocomplete' => 'given-name',
                 ],
             ])
             ->add('lastName', TextType::class, [
                 'label' => 'Nom',
                 'attr' => [
-                    'placeholder' => 'Dupont',
+                    'placeholder' => 'Votre nom',
                     'autocomplete' => 'family-name',
                 ],
             ])
-            ->add('agreeTerms', CheckboxType::class, [
-                'label' => 'J\'accepte les conditions d\'utilisation',
-                'mapped' => false,
-                'constraints' => [
-                    new IsTrue([
-                        'message' => 'Vous devez accepter les conditions d\'utilisation.',
-                    ]),
+            ->add('email', EmailType::class, [
+                'label' => 'Email',
+                'attr' => [
+                    'placeholder' => 'votre@email.com',
+                    'autocomplete' => 'email',
                 ],
             ])
             ->add('plainPassword', RepeatedType::class, [
@@ -58,33 +49,37 @@ class RegistrationFormType extends AbstractType
                     'label' => 'Mot de passe',
                     'attr' => [
                         'autocomplete' => 'new-password',
-                        'placeholder' => '••••••••',
+                        'placeholder' => 'Votre mot de passe',
                     ],
                 ],
                 'second_options' => [
                     'label' => 'Confirmer le mot de passe',
                     'attr' => [
                         'autocomplete' => 'new-password',
-                        'placeholder' => '••••••••',
+                        'placeholder' => 'Confirmez votre mot de passe',
                     ],
                 ],
                 'invalid_message' => 'Les mots de passe ne correspondent pas.',
                 'constraints' => [
-                    new NotBlank([
-                        'message' => 'Veuillez entrer un mot de passe',
-                    ]),
-                    new Length([
-                        'min' => 8,
-                        'minMessage' => 'Votre mot de passe doit contenir au moins {{ limit }} caractères',
-                        'max' => 4096,
-                    ]),
-                    new PasswordStrength([
-                        'minScore' => PasswordStrength::STRENGTH_MEDIUM,
-                        'message' => 'Votre mot de passe est trop faible. Utilisez des lettres, chiffres et caractères spéciaux.',
-                    ]),
+                    new NotBlank(message: 'Veuillez entrer un mot de passe.'),
+                    new Length(
+                        min: 8,
+                        max: 4096,
+                        minMessage: 'Le mot de passe doit contenir au moins {{ limit }} caractères.'
+                    ),
+                    new Regex(
+                        pattern: '/^(?=.*[a-z])(?=.*[A-Z])(?=.*\d).+$/',
+                        message: 'Le mot de passe doit contenir au moins une majuscule, une minuscule et un chiffre.'
+                    ),
                 ],
             ])
-        ;
+            ->add('agreeTerms', CheckboxType::class, [
+                'mapped' => false,
+                'label' => 'J\'accepte les conditions d\'utilisation',
+                'constraints' => [
+                    new IsTrue(message: 'Vous devez accepter les conditions d\'utilisation.'),
+                ],
+            ]);
     }
 
     public function configureOptions(OptionsResolver $resolver): void

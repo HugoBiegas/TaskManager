@@ -3,56 +3,63 @@
 namespace App\Controller;
 
 use App\Entity\Task;
-use App\Entity\TaskStatus;
 use App\Entity\User;
+use App\Enum\TaskStatus;
 use App\Form\TaskType;
+use App\Repository\CategoryRepository;
 use App\Repository\TaskRepository;
+use App\Security\Voter\TaskVoter;
 use Doctrine\ORM\EntityManagerInterface;
 use Symfony\Bundle\FrameworkBundle\Controller\AbstractController;
 use Symfony\Component\HttpFoundation\Request;
 use Symfony\Component\HttpFoundation\Response;
 use Symfony\Component\Routing\Attribute\Route;
-use Symfony\Component\Security\Http\Attribute\CurrentUser;
 use Symfony\Component\Security\Http\Attribute\IsGranted;
 
 #[Route('/tasks')]
-class TaskController extends AbstractController
+final class TaskController extends AbstractController
 {
     public function __construct(
         private readonly TaskRepository $taskRepository,
-        private readonly EntityManagerInterface $entityManager
+        private readonly CategoryRepository $categoryRepository,
+        private readonly EntityManagerInterface $entityManager,
     ) {
     }
 
     #[Route('', name: 'app_task_index', methods: ['GET'])]
-    public function index(#[CurrentUser] User $user, Request $request): Response
+    public function index(Request $request): Response
     {
-        // Filtrer par statut si demandé
+        /** @var User $user */
+        $user = $this->getUser();
+
         $statusFilter = $request->query->get('status');
+        $categoryFilter = $request->query->get('category');
+        $search = $request->query->get('search');
 
-        if ($statusFilter && TaskStatus::tryFrom($statusFilter)) {
-            $tasks = $this->taskRepository->findByOwnerAndStatus($user, TaskStatus::from($statusFilter));
-        } else {
-            $tasks = $this->taskRepository->findByOwnerWithCategory($user);
-        }
+        $status = $statusFilter ? TaskStatus::tryFrom($statusFilter) : null;
+        $categoryId = $categoryFilter ? (int) $categoryFilter : null;
 
-        // Statistiques
-        $stats = $this->taskRepository->countByStatus($user);
-        $overdueTasks = $this->taskRepository->findOverdue($user);
-        $todayTasks = $this->taskRepository->findDueToday($user);
+        $tasks = $this->taskRepository->findByOwnerWithFilters($user, $status, $categoryId, $search);
+        $categories = $this->categoryRepository->findByOwner($user);
+        $stats = $this->taskRepository->getStatsByOwner($user);
 
         return $this->render('task/index.html.twig', [
             'tasks' => $tasks,
+            'categories' => $categories,
             'stats' => $stats,
-            'overdueTasks' => $overdueTasks,
-            'todayTasks' => $todayTasks,
             'currentStatus' => $statusFilter,
+            'currentCategory' => $categoryFilter,
+            'search' => $search,
+            'statuses' => TaskStatus::cases(),
         ]);
     }
 
     #[Route('/new', name: 'app_task_new', methods: ['GET', 'POST'])]
-    public function new(#[CurrentUser] User $user, Request $request): Response
+    public function new(Request $request): Response
     {
+        /** @var User $user */
+        $user = $this->getUser();
+
         $task = new Task();
         $task->setOwner($user);
 
@@ -63,9 +70,9 @@ class TaskController extends AbstractController
             $this->entityManager->persist($task);
             $this->entityManager->flush();
 
-            $this->addFlash('success', 'La tâche a été créée avec succès.');
+            $this->addFlash('success', 'Tâche créée avec succès.');
 
-            return $this->redirectToRoute('app_task_index', [], Response::HTTP_SEE_OTHER);
+            return $this->redirectToRoute('app_task_index');
         }
 
         return $this->render('task/new.html.twig', [
@@ -75,7 +82,7 @@ class TaskController extends AbstractController
     }
 
     #[Route('/{id}', name: 'app_task_show', methods: ['GET'])]
-    #[IsGranted('view', subject: 'task')]
+    #[IsGranted(TaskVoter::VIEW, subject: 'task')]
     public function show(Task $task): Response
     {
         return $this->render('task/show.html.twig', [
@@ -84,7 +91,7 @@ class TaskController extends AbstractController
     }
 
     #[Route('/{id}/edit', name: 'app_task_edit', methods: ['GET', 'POST'])]
-    #[IsGranted('edit', subject: 'task')]
+    #[IsGranted(TaskVoter::EDIT, subject: 'task')]
     public function edit(Request $request, Task $task): Response
     {
         $form = $this->createForm(TaskType::class, $task);
@@ -93,9 +100,9 @@ class TaskController extends AbstractController
         if ($form->isSubmitted() && $form->isValid()) {
             $this->entityManager->flush();
 
-            $this->addFlash('success', 'La tâche a été modifiée avec succès.');
+            $this->addFlash('success', 'Tâche modifiée avec succès.');
 
-            return $this->redirectToRoute('app_task_index', [], Response::HTTP_SEE_OTHER);
+            return $this->redirectToRoute('app_task_index');
         }
 
         return $this->render('task/edit.html.twig', [
@@ -105,54 +112,37 @@ class TaskController extends AbstractController
     }
 
     #[Route('/{id}', name: 'app_task_delete', methods: ['POST'])]
-    #[IsGranted('delete', subject: 'task')]
+    #[IsGranted(TaskVoter::DELETE, subject: 'task')]
     public function delete(Request $request, Task $task): Response
     {
-        if ($this->isCsrfTokenValid('delete'.$task->getId(), $request->getPayload()->getString('_token'))) {
+        if ($this->isCsrfTokenValid('delete' . $task->getId(), $request->getPayload()->getString('_token'))) {
             $this->entityManager->remove($task);
             $this->entityManager->flush();
 
-            $this->addFlash('success', 'La tâche a été supprimée.');
+            $this->addFlash('success', 'Tâche supprimée avec succès.');
         }
 
-        return $this->redirectToRoute('app_task_index', [], Response::HTTP_SEE_OTHER);
+        return $this->redirectToRoute('app_task_index');
     }
 
-    #[Route('/{id}/status/{status}', name: 'app_task_change_status', methods: ['POST'])]
-    #[IsGranted('edit', subject: 'task')]
-    public function changeStatus(Request $request, Task $task, string $status): Response
+    #[Route('/{id}/toggle-status', name: 'app_task_toggle_status', methods: ['POST'])]
+    #[IsGranted(TaskVoter::EDIT, subject: 'task')]
+    public function toggleStatus(Request $request, Task $task): Response
     {
-        if ($this->isCsrfTokenValid('status'.$task->getId(), $request->getPayload()->getString('_token'))) {
-            $newStatus = TaskStatus::tryFrom($status);
+        if ($this->isCsrfTokenValid('toggle' . $task->getId(), $request->getPayload()->getString('_token'))) {
+            $newStatus = match ($task->getStatus()) {
+                TaskStatus::TODO => TaskStatus::IN_PROGRESS,
+                TaskStatus::IN_PROGRESS => TaskStatus::DONE,
+                TaskStatus::DONE => TaskStatus::TODO,
+                TaskStatus::CANCELLED => TaskStatus::TODO,
+            };
 
-            if ($newStatus) {
-                $task->setStatus($newStatus);
-                $this->entityManager->flush();
+            $task->setStatus($newStatus);
+            $this->entityManager->flush();
 
-                $this->addFlash('success', sprintf(
-                    'La tâche "%s" est maintenant "%s".',
-                    $task->getTitle(),
-                    $newStatus->label()
-                ));
-            }
+            $this->addFlash('success', sprintf('Statut changé en "%s".', $newStatus->label()));
         }
 
-        return $this->redirectToRoute('app_task_index', [], Response::HTTP_SEE_OTHER);
-    }
-
-    #[Route('/search', name: 'app_task_search', methods: ['GET'], priority: 10)]
-    public function search(#[CurrentUser] User $user, Request $request): Response
-    {
-        $query = $request->query->get('q', '');
-        $tasks = [];
-
-        if (strlen($query) >= 2) {
-            $tasks = $this->taskRepository->search($user, $query);
-        }
-
-        return $this->render('task/search.html.twig', [
-            'tasks' => $tasks,
-            'query' => $query,
-        ]);
+        return $this->redirectToRoute('app_task_index');
     }
 }

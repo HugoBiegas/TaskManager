@@ -1,0 +1,101 @@
+{% extends '_layout/app.html.twig' %}
+
+{% block title %}Administration - Utilisateurs{% endblock %}
+
+{% block content %}
+<div class="space-y-6">
+    <div class="flex justify-between items-center">
+        <div>
+            <h1 class="text-2xl font-bold text-gray-900">Gestion des utilisateurs</h1>
+            <p class="mt-1 text-sm text-gray-500">{{ users|length }} utilisateur{{ users|length > 1 ? 's' : '' }} enregistré{{ users|length > 1 ? 's' : '' }}</p>
+        </div>
+    </div>
+
+    <div class="bg-white shadow rounded-lg overflow-hidden">
+        <table class="min-w-full divide-y divide-gray-200">
+            <thead class="bg-gray-50">
+                <tr>
+                    <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Utilisateur</th>
+                    <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Email</th>
+                    <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Rôle</th>
+                    <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Statut</th>
+                    <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Inscrit le</th>
+                    <th class="px-6 py-3 text-right text-xs font-medium text-gray-500 uppercase tracking-wider">Actions</th>
+                </tr>
+            </thead>
+            <tbody class="bg-white divide-y divide-gray-200">
+                {% for user in users %}
+                    <tr class="{% if not user.active %}bg-gray-50{% endif %}">
+                        <td class="px-6 py-4 whitespace-nowrap">
+                            <div class="flex items-center">
+                                {% if user.avatarName %}
+                                    <img class="h-10 w-10 rounded-full object-cover" src="{{ vich_uploader_asset(user, 'avatarFile') }}" alt="{{ user.fullName }}">
+                                {% else %}
+                                    <div class="h-10 w-10 rounded-full bg-primary-100 flex items-center justify-center">
+                                        <span class="text-primary-700 font-medium">{{ user.firstName|first|upper }}{{ user.lastName|first|upper }}</span>
+                                    </div>
+                                {% endif %}
+                                <div class="ml-4">
+                                    <div class="text-sm font-medium text-gray-900">{{ user.fullName }}</div>
+                                    <div class="text-sm text-gray-500">{{ user.tasks|length }} tâche{{ user.tasks|length > 1 ? 's' : '' }}</div>
+                                </div>
+                            </div>
+                        </td>
+                        <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-500">
+                            {{ user.email }}
+                        </td>
+                        <td class="px-6 py-4 whitespace-nowrap">
+                            {% if user.admin %}
+                                <span class="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium bg-purple-100 text-purple-800">
+                                    Admin
+                                </span>
+                            {% else %}
+                                <span class="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium bg-gray-100 text-gray-800">
+                                    Utilisateur
+                                </span>
+                            {% endif %}
+                        </td>
+                        <td class="px-6 py-4 whitespace-nowrap">
+                            {% if user.active %}
+                                <span class="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium bg-green-100 text-green-800">
+                                    Actif
+                                </span>
+                            {% else %}
+                                <span class="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium bg-red-100 text-red-800">
+                                    Inactif
+                                </span>
+                            {% endif %}
+                        </td>
+                        <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-500">
+                            {{ user.createdAt|date('d/m/Y') }}
+                        </td>
+                        <td class="px-6 py-4 whitespace-nowrap text-right text-sm font-medium">
+                            <div class="flex justify-end space-x-2">
+                                <a href="{{ path('app_admin_user_edit', {id: user.id}) }}" class="text-primary-600 hover:text-primary-900">
+                                    Modifier
+                                </a>
+                                {% if user != app.user %}
+                                    <form method="post" action="{{ path('app_admin_user_toggle_active', {id: user.id}) }}" class="inline">
+                                        <input type="hidden" name="_token" value="{{ csrf_token('toggle' ~ user.id) }}">
+                                        <button type="submit" class="{% if user.active %}text-orange-600 hover:text-orange-900{% else %}text-green-600 hover:text-green-900{% endif %}">
+                                            {{ user.active ? 'Désactiver' : 'Activer' }}
+                                        </button>
+                                    </form>
+                                    <form method="post" action="{{ path('app_admin_user_delete', {id: user.id}) }}" class="inline" onsubmit="return confirm('Supprimer cet utilisateur et toutes ses données ?')">
+                                        <input type="hidden" name="_token" value="{{ csrf_token('delete' ~ user.id) }}">
+                                        <button type="submit" class="text-red-600 hover:text-red-900">
+                                            Supprimer
+                                        </button>
+                                    </form>
+                                {% else %}
+                                    <span class="text-gray-400">(vous)</span>
+                                {% endif %}
+                            </div>
+                        </td>
+                    </tr>
+                {% endfor %}
+            </tbody>
+        </table>
+    </div>
+</div>
+{% endblock %}

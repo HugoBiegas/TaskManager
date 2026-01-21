@@ -1,0 +1,84 @@
+{% extends '_layout/app.html.twig' %}
+
+{% block title %}{{ user.fullName }} - Administration{% endblock %}
+
+{% block content %}
+<div class="max-w-2xl mx-auto">
+    <div class="mb-6">
+        <a href="{{ path('app_admin_users') }}" class="inline-flex items-center text-sm text-gray-500 hover:text-gray-700">
+            <svg class="h-5 w-5 mr-1" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M10 19l-7-7m0 0l7-7m-7 7h18"></path>
+            </svg>
+            Retour à la liste
+        </a>
+    </div>
+
+    <div class="bg-white shadow rounded-lg overflow-hidden">
+        <div class="px-6 py-4 border-b border-gray-200 flex justify-between items-center">
+            <div class="flex items-center">
+                {% if user.avatarName %}
+                    <img class="h-16 w-16 rounded-full object-cover" src="{{ vich_uploader_asset(user, 'avatarFile') }}" alt="{{ user.fullName }}">
+                {% else %}
+                    <div class="h-16 w-16 rounded-full bg-primary-100 flex items-center justify-center">
+                        <span class="text-primary-700 font-medium text-xl">{{ user.firstName|first|upper }}{{ user.lastName|first|upper }}</span>
+                    </div>
+                {% endif %}
+                <div class="ml-4">
+                    <h1 class="text-xl font-semibold text-gray-900">{{ user.fullName }}</h1>
+                    <p class="text-sm text-gray-500">{{ user.email }}</p>
+                </div>
+            </div>
+            <a href="{{ path('app_admin_user_edit', {id: user.id}) }}"
+               class="inline-flex items-center px-3 py-2 border border-gray-300 rounded-md text-sm font-medium text-gray-700 bg-white hover:bg-gray-50">
+                Modifier
+            </a>
+        </div>
+
+        <div class="px-6 py-4 space-y-4">
+            <div class="flex items-center space-x-4">
+                {% if user.admin %}
+                    <span class="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium bg-purple-100 text-purple-800">
+                        Administrateur
+                    </span>
+                {% else %}
+                    <span class="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium bg-gray-100 text-gray-800">
+                        Utilisateur
+                    </span>
+                {% endif %}
+                {% if user.active %}
+                    <span class="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium bg-green-100 text-green-800">
+                        Actif
+                    </span>
+                {% else %}
+                    <span class="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium bg-red-100 text-red-800">
+                        Inactif
+                    </span>
+                {% endif %}
+            </div>
+
+            <div class="grid grid-cols-2 gap-4 pt-4 border-t border-gray-200">
+                <div>
+                    <h3 class="text-sm font-medium text-gray-500">Inscrit le</h3>
+                    <p class="mt-1 text-sm text-gray-900">{{ user.createdAt|date('d/m/Y à H:i') }}</p>
+                </div>
+                {% if user.updatedAt %}
+                    <div>
+                        <h3 class="text-sm font-medium text-gray-500">Dernière modification</h3>
+                        <p class="mt-1 text-sm text-gray-900">{{ user.updatedAt|date('d/m/Y à H:i') }}</p>
+                    </div>
+                {% endif %}
+            </div>
+
+            <div class="pt-4 border-t border-gray-200">
+                <h3 class="text-sm font-medium text-gray-500">Statistiques</h3>
+                <div class="mt-2 grid grid-cols-2 gap-4">
+                    <div class="bg-gray-50 rounded-lg p-3">
+                        <div class="text-2xl font-semibold text-gray-900">{{ user.tasks|length }}</div>
+                        <div class="text-sm text-gray-500">Tâches créées</div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}

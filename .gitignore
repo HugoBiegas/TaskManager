@@ -1,4 +1,5 @@
 # Symfony
+###> symfony/framework-bundle ###
 /.env.local
 /.env.local.php
 /.env.*.local
@@ -6,18 +7,26 @@
 /public/bundles/
 /var/
 /vendor/
+###< symfony/framework-bundle ###
 
-# PHPUnit
-.phpunit.result.cache
-.phpunit.cache/
+###> phpunit/phpunit ###
 /phpunit.xml
+/.phpunit.cache/
+###< phpunit/phpunit ###
 
-# Composer
-composer.phar
+###> symfony/asset-mapper ###
+/public/assets/
+/assets/vendor/
+###< symfony/asset-mapper ###
+
+###> vich/uploader-bundle ###
+/public/uploads/*
+!/public/uploads/.gitkeep
+###< vich/uploader-bundle ###
 
 # IDE
-/.idea/
-/.vscode/
+.idea/
+.vscode/
 *.swp
 *.swo
 *~
@@ -26,21 +35,13 @@ composer.phar
 .DS_Store
 Thumbs.db
 
-# Docker
-docker-compose.override.yml
-
-# Build artifacts
-/public/build/
-
 # Logs
 *.log
 npm-debug.log*
 
-# Testing
-/coverage/
+# Test
+/var/test.db
+cookies.txt
 
-# Node (si utilisation de Webpack Encore)
+# Build
 /node_modules/
-
-# Ignore le document Word (documentation)
-*.docx

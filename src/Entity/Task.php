@@ -2,79 +2,18 @@
 
 namespace App\Entity;
 
+use App\Enum\TaskPriority;
+use App\Enum\TaskStatus;
 use App\Repository\TaskRepository;
 use Doctrine\DBAL\Types\Types;
 use Doctrine\ORM\Mapping as ORM;
 use Symfony\Component\Validator\Constraints as Assert;
 
-/**
- * Enumération pour le statut des tâches
- */
-enum TaskStatus: string
-{
-    case TODO = 'todo';
-    case IN_PROGRESS = 'in_progress';
-    case DONE = 'done';
-    case CANCELLED = 'cancelled';
-
-    public function label(): string
-    {
-        return match ($this) {
-            self::TODO => 'À faire',
-            self::IN_PROGRESS => 'En cours',
-            self::DONE => 'Terminée',
-            self::CANCELLED => 'Annulée',
-        };
-    }
-
-    public function color(): string
-    {
-        return match ($this) {
-            self::TODO => 'secondary',
-            self::IN_PROGRESS => 'primary',
-            self::DONE => 'success',
-            self::CANCELLED => 'danger',
-        };
-    }
-}
-
-/**
- * Enumération pour la priorité des tâches
- */
-enum TaskPriority: string
-{
-    case LOW = 'low';
-    case MEDIUM = 'medium';
-    case HIGH = 'high';
-    case URGENT = 'urgent';
-
-    public function label(): string
-    {
-        return match ($this) {
-            self::LOW => 'Basse',
-            self::MEDIUM => 'Moyenne',
-            self::HIGH => 'Haute',
-            self::URGENT => 'Urgente',
-        };
-    }
-
-    public function color(): string
-    {
-        return match ($this) {
-            self::LOW => 'info',
-            self::MEDIUM => 'secondary',
-            self::HIGH => 'warning',
-            self::URGENT => 'danger',
-        };
-    }
-}
-
 #[ORM\Entity(repositoryClass: TaskRepository::class)]
-#[ORM\Table(name: 'task')]
-#[ORM\Index(name: 'idx_task_status', columns: ['status'])]
-#[ORM\Index(name: 'idx_task_priority', columns: ['priority'])]
-#[ORM\Index(name: 'idx_task_due_date', columns: ['due_date'])]
 #[ORM\HasLifecycleCallbacks]
+#[ORM\Index(columns: ['status'], name: 'idx_task_status')]
+#[ORM\Index(columns: ['priority'], name: 'idx_task_priority')]
+#[ORM\Index(columns: ['due_date'], name: 'idx_task_due_date')]
 class Task
 {
     #[ORM\Id]
@@ -83,38 +22,51 @@ class Task
     private ?int $id = null;
 
     #[ORM\Column(length: 255)]
-    #[Assert\NotBlank(message: 'Le titre est obligatoire')]
-    #[Assert\Length(min: 3, max: 255, minMessage: 'Le titre doit contenir au moins {{ limit }} caractères')]
+    #[Assert\NotBlank(message: 'Le titre est obligatoire.')]
+    #[Assert\Length(
+        min: 3,
+        max: 255,
+        minMessage: 'Le titre doit contenir au moins {{ limit }} caractères.',
+        maxMessage: 'Le titre ne peut pas dépasser {{ limit }} caractères.'
+    )]
     private ?string $title = null;
 
     #[ORM\Column(type: Types::TEXT, nullable: true)]
-    #[Assert\Length(max: 5000)]
+    #[Assert\Length(
+        max: 5000,
+        maxMessage: 'La description ne peut pas dépasser {{ limit }} caractères.'
+    )]
     private ?string $description = null;
 
-    #[ORM\Column(length: 20, enumType: TaskStatus::class)]
+    #[ORM\Column(enumType: TaskStatus::class)]
     private TaskStatus $status = TaskStatus::TODO;
 
-    #[ORM\Column(length: 20, enumType: TaskPriority::class)]
+    #[ORM\Column(enumType: TaskPriority::class)]
     private TaskPriority $priority = TaskPriority::MEDIUM;
 
-    #[ORM\Column(type: Types::DATE_MUTABLE, nullable: true)]
-    #[Assert\GreaterThanOrEqual('today', message: 'La date d\'échéance ne peut pas être dans le passé', groups: ['create'])]
-    private ?\DateTimeInterface $dueDate = null;
+    #[ORM\Column(type: Types::DATE_IMMUTABLE, nullable: true)]
+    #[Assert\GreaterThanOrEqual(
+        value: 'today',
+        message: 'La date d\'échéance ne peut pas être dans le passé.',
+        groups: ['create']
+    )]
+    private ?\DateTimeImmutable $dueDate = null;
 
-    #[ORM\Column]
-    private ?\DateTimeImmutable $createdAt = null;
-
-    #[ORM\Column(nullable: true)]
-    private ?\DateTimeImmutable $updatedAt = null;
-
-    #[ORM\Column(nullable: true)]
+    #[ORM\Column(type: Types::DATETIME_IMMUTABLE, nullable: true)]
     private ?\DateTimeImmutable $completedAt = null;
 
-    #[ORM\ManyToOne(inversedBy: 'tasks')]
-    #[ORM\JoinColumn(nullable: false)]
+    #[ORM\Column(type: Types::DATETIME_IMMUTABLE)]
+    private ?\DateTimeImmutable $createdAt = null;
+
+    #[ORM\Column(type: Types::DATETIME_IMMUTABLE, nullable: true)]
+    private ?\DateTimeImmutable $updatedAt = null;
+
+    #[ORM\ManyToOne(targetEntity: User::class, inversedBy: 'tasks')]
+    #[ORM\JoinColumn(nullable: false, onDelete: 'CASCADE')]
     private ?User $owner = null;
 
-    #[ORM\ManyToOne(inversedBy: 'tasks')]
+    #[ORM\ManyToOne(targetEntity: Category::class, inversedBy: 'tasks')]
+    #[ORM\JoinColumn(onDelete: 'SET NULL')]
     private ?Category $category = null;
 
     public function __construct()
@@ -158,16 +110,15 @@ class Task
 
     public function setStatus(TaskStatus $status): static
     {
-        // Si le statut passe à DONE, enregistrer la date de complétion
-        if ($status === TaskStatus::DONE && $this->status !== TaskStatus::DONE) {
+        $previousStatus = $this->status;
+        $this->status = $status;
+
+        // Mark completion time when task is done
+        if ($status === TaskStatus::DONE && $previousStatus !== TaskStatus::DONE) {
             $this->completedAt = new \DateTimeImmutable();
-        }
-        // Si le statut n'est plus DONE, effacer la date de complétion
-        if ($status !== TaskStatus::DONE) {
+        } elseif ($status !== TaskStatus::DONE) {
             $this->completedAt = null;
         }
-
-        $this->status = $status;
 
         return $this;
     }
@@ -184,14 +135,26 @@ class Task
         return $this;
     }
 
-    public function getDueDate(): ?\DateTimeInterface
+    public function getDueDate(): ?\DateTimeImmutable
     {
         return $this->dueDate;
     }
 
-    public function setDueDate(?\DateTimeInterface $dueDate): static
+    public function setDueDate(?\DateTimeImmutable $dueDate): static
     {
         $this->dueDate = $dueDate;
+
+        return $this;
+    }
+
+    public function getCompletedAt(): ?\DateTimeImmutable
+    {
+        return $this->completedAt;
+    }
+
+    public function setCompletedAt(?\DateTimeImmutable $completedAt): static
+    {
+        $this->completedAt = $completedAt;
 
         return $this;
     }
@@ -226,11 +189,6 @@ class Task
         $this->updatedAt = new \DateTimeImmutable();
     }
 
-    public function getCompletedAt(): ?\DateTimeImmutable
-    {
-        return $this->completedAt;
-    }
-
     public function getOwner(): ?User
     {
         return $this->owner;
@@ -255,9 +213,6 @@ class Task
         return $this;
     }
 
-    /**
-     * Vérifie si la tâche est en retard
-     */
     public function isOverdue(): bool
     {
         if ($this->dueDate === null) {
@@ -268,18 +223,37 @@ class Task
             return false;
         }
 
-        return $this->dueDate < new \DateTime('today');
+        return $this->dueDate < new \DateTimeImmutable('today');
     }
 
-    /**
-     * Vérifie si la tâche est due aujourd'hui
-     */
     public function isDueToday(): bool
     {
         if ($this->dueDate === null) {
             return false;
         }
 
-        return $this->dueDate->format('Y-m-d') === (new \DateTime())->format('Y-m-d');
+        return $this->dueDate->format('Y-m-d') === (new \DateTimeImmutable('today'))->format('Y-m-d');
+    }
+
+    public function isDueSoon(): bool
+    {
+        if ($this->dueDate === null) {
+            return false;
+        }
+
+        $threeDaysFromNow = new \DateTimeImmutable('+3 days');
+        $today = new \DateTimeImmutable('today');
+
+        return $this->dueDate >= $today && $this->dueDate <= $threeDaysFromNow;
+    }
+
+    public function isCompleted(): bool
+    {
+        return $this->status === TaskStatus::DONE;
+    }
+
+    public function __toString(): string
+    {
+        return $this->title ?? '';
     }
 }

@@ -3,6 +3,7 @@
 namespace App\Repository;
 
 use App\Entity\Category;
+use App\Entity\User;
 use Doctrine\Bundle\DoctrineBundle\Repository\ServiceEntityRepository;
 use Doctrine\Persistence\ManagerRegistry;
 
@@ -17,61 +18,31 @@ class CategoryRepository extends ServiceEntityRepository
     }
 
     /**
-     * Trouve toutes les catégories triées par nom
-     *
      * @return Category[]
      */
-    public function findAllSorted(): array
+    public function findByOwner(User $owner): array
     {
         return $this->createQueryBuilder('c')
+            ->andWhere('c.owner = :owner')
+            ->setParameter('owner', $owner)
             ->orderBy('c.name', 'ASC')
             ->getQuery()
             ->getResult();
     }
 
     /**
-     * Trouve une catégorie par son nom
+     * @return Category[]
      */
-    public function findOneByName(string $name): ?Category
-    {
-        return $this->createQueryBuilder('c')
-            ->andWhere('c.name = :name')
-            ->setParameter('name', $name)
-            ->getQuery()
-            ->getOneOrNullResult();
-    }
-
-    /**
-     * Trouve les catégories avec le nombre de tâches
-     *
-     * @return array<array{category: Category, taskCount: int}>
-     */
-    public function findAllWithTaskCount(): array
+    public function findByOwnerWithTaskCount(User $owner): array
     {
         return $this->createQueryBuilder('c')
             ->select('c', 'COUNT(t.id) as taskCount')
             ->leftJoin('c.tasks', 't')
+            ->andWhere('c.owner = :owner')
+            ->setParameter('owner', $owner)
             ->groupBy('c.id')
             ->orderBy('c.name', 'ASC')
             ->getQuery()
             ->getResult();
-    }
-
-    public function save(Category $entity, bool $flush = false): void
-    {
-        $this->getEntityManager()->persist($entity);
-
-        if ($flush) {
-            $this->getEntityManager()->flush();
-        }
-    }
-
-    public function remove(Category $entity, bool $flush = false): void
-    {
-        $this->getEntityManager()->remove($entity);
-
-        if ($flush) {
-            $this->getEntityManager()->flush();
-        }
     }
 }

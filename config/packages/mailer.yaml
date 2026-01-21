@@ -1,15 +1,3 @@
-# config/packages/mailer.yaml
-# Configuration du mailer
 framework:
     mailer:
         dsn: '%env(MAILER_DSN)%'
-
-when@dev:
-    framework:
-        mailer:
-            dsn: 'smtp://mailer:1025'
-
-when@test:
-    framework:
-        mailer:
-            dsn: 'null://null'
