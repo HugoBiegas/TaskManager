@@ -23,6 +23,9 @@ RUN docker-php-ext-install \
 # Install Composer
 COPY --from=composer:latest /usr/bin/composer /usr/bin/composer
 
+# Create necessary directories for supervisor and nginx
+RUN mkdir -p /var/log/supervisor /var/log/nginx /run/nginx
+
 # Set working directory
 WORKDIR /var/www/html
 
@@ -35,9 +38,13 @@ RUN composer install --no-dev --no-scripts --no-autoloader --prefer-dist
 # Copy the rest of the application
 COPY . .
 
-# Generate autoloader and run scripts
+# Set APP_ENV to prod for cache:clear
+ENV APP_ENV=prod
+
+# Generate autoloader and clear cache
 RUN composer dump-autoload --optimize --classmap-authoritative \
-    && composer run-script post-install-cmd --no-interaction || true
+    && php bin/console cache:clear --env=prod --no-warmup || true \
+    && php bin/console cache:warmup --env=prod || true
 
 # Create necessary directories
 RUN mkdir -p var/cache var/log public/uploads/avatars \
