@@ -18,6 +18,8 @@ services:
         generateValue: true
       - key: DATABASE_URL
         sync: false
+      - key: DEFAULT_URI
+        value: "https://taskmanager-zv0a.onrender.com"
       - key: TRUSTED_PROXIES
         value: "127.0.0.1,REMOTE_ADDR"
       - key: TRUSTED_HOSTS
